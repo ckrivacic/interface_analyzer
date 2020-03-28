@@ -41,3 +41,21 @@ def reslist_to_pdb_numbers(reslist, pose):
 
     return poselist
 
+
+def reslist_to_selstr(reslist):
+    selection = []
+    for res in reslist:
+        try:
+            splt = res.split(' ')
+            resnum = splt[0]
+            chain = splt[1]
+        except:
+            # Default to chain A if given a list of integers instead of
+            # resnum and chain. Can add an option to specify chain
+            # later.
+            resnum = res
+            chain = 'A'
+        selstr = ' (resi {} and chain {}) '.format(resnum, chain)
+        selection.append(selstr)
+
+    return 'or'.join(selection)

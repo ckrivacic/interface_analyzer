@@ -37,27 +37,39 @@ class PyInterface(object):
     def set_pdb_interface(self):
         self.pdb_interfaces = []
         for interface_obj in self.interfaces:
-            print(interface_obj.pair_list())
             for side in interface_obj.pair_list():
                 self.pdb_interfaces.append(reslist_to_pdb_numbers(side, pose))
 
+def cealign(reference, query, reference_reslist, query_reslist, window=8):
+    query_selstr = "query and ({})".format(reslist_to_selstr(query_reslist))
+    reference_selstr = "reference and ({})".format(reslist_to_selstr(reference_reslist))
+    alignment_str = "cealign {}, {}".format(reference_selstr,
+            query_selstr)
+    return pymol.cmd.cealign(reference_selstr, query_selstr, window=window)
+
+'''
+For testing
+'''
 init()
 
 pdbid = '5T35'
 pose = pose_from_rcsb(pdbid, 'test_inputs')
 interface = PyInterface(pose)
 interface.find_interface()
-print(interface.pdb_interfaces)
 
 #query_resselectors = []
 
 #reference_pose = pose_from_file(os.path.join('test_inputs','query.pdb'))
-#reference_interface = [126,127,125,19,124,80,79,128,78,18,76,129,11,16,14,81,13,116,12,115,15,9,8,7]
-reference_interface = [2,4,5,6,7]
+reference_interface = [126,127,125,19,124,80,79,128,78,18,76,129,11,16,14,81,13,116,12,115,15,9,8,7]
+#reference_interface = [2,4,5,6,7]
 #reference_selector = list_to_res_selector(reference_interface)
 query_pymol = pymol.cmd.load(os.path.join('test_inputs', pdbid +
-    '.clean.pdb'))
+    '.clean.pdb'), 'query')
 reference_pymol = pymol.cmd.load(os.path.join('test_inputs','reference.pdb'), 'reference')
+
+alignment = cealign(reference_pymol, query_pymol, reference_interface,
+        interface.pdb_interfaces[0], window=3)
+print(alignment['RMSD'])
 
 '''
 The following requires same number of atoms or residues in each pose.
