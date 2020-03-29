@@ -1,3 +1,10 @@
+'''
+Usage: python3 interface.py <pdbid>
+
+Finds interfaces in pdbid, then tries to cealign those interface
+residues to the reference interface as defined in
+reference_interface_definition.py.
+'''
 from pyrosetta import *
 from utils import *
 from pyrosetta.rosetta.core.select import residue_selector
@@ -9,6 +16,7 @@ import sys, os
 #sys.path.insert(1,'/home/krivacic/software/pymol/lib/python3.7/site-packages')
 #sys.path.insert(1,'/home/krivacic/software/pymol/lib/python3.7')
 import pymol
+from reference_interface_definition import *
 
 class PyInterface(object):
     def __init__(self, pose):
@@ -40,51 +48,60 @@ class PyInterface(object):
             for side in interface_obj.pair_list():
                 self.pdb_interfaces.append(reslist_to_pdb_numbers(side, pose))
 
-def cealign(reference, query, reference_reslist, query_reslist, window=8):
-    query_selstr = "query and ({})".format(reslist_to_selstr(query_reslist))
+def cealign(reference, query, reference_reslist, query_reslist, pdbid, window=8):
+    pymol.cmd.hide('lines','all')
+    query_selstr = "{} and ({})".format(pdbid, reslist_to_selstr(query_reslist))
     pymol.cmd.show('lines',query_selstr)
     reference_selstr = "reference and ({})".format(reslist_to_selstr(reference_reslist))
     pymol.cmd.show('lines',reference_selstr)
     alignment_str = "cealign {}, {}".format(reference_selstr,
             query_selstr)
+    pymol.util.cbc(selection=pdbid)
     return pymol.cmd.cealign(reference_selstr, query_selstr, window=window)
+
+
+def align_interfaces(query_interface, reference_interfaces, pdbid,
+        reference_pdb, input_dir='test_inputs'):
+    query_pymol = pymol.cmd.load(os.path.join(input_dir, pdbid +
+        '.clean.pdb'), pdbid)
+    #print(pymol.cmd.get_title(query_pymol, 0))
+    reference_pymol = pymol.cmd.load(reference_pdb, 'reference')
+    i = 0
+    best_i = 0
+    best_rmsd = 999
+    for query_interface in query_interface.pdb_interfaces:
+        for reference_interface in reference_interfaces:
+            try:
+                alignment = cealign(reference_pymol, query_pymol, reference_interface,
+                        query_interface, pdbid, window=3)
+                print(alignment)
+                if alignment['RMSD'] < 3.0:
+                    pymol.cmd.save('{}_{}_rmsd_{}.pse'.format(pdbid,i,alignment['RMSD']))
+                if alignment['RMSD'] < best_rmsd:
+                    best_rmsd = alignment['RMSD']
+                    best_i = i
+            except:
+                print('could not align {} with {}'.format(query_interface, reference_interface))
+
+            i += 1
+    print('Best interface: test_{}.pse'.format(best_i))
 
 '''
 For testing
 '''
-init()
-pymol.finish_launching(['pymol','-qc'])
+if __name__=='__main__':
+    init()
+    pymol.finish_launching(['pymol','-qc'])
+    input_dir = 'test_inputs'
 
-pdbid = '3zpz'
-pose = pose_from_rcsb(pdbid, 'test_inputs')
-interface = PyInterface(pose)
-interface.find_interface()
+    pdbid = sys.argv[1]
+    pose = pose_from_rcsb(pdbid, 'test_inputs')
+    interface = PyInterface(pose)
+    interface.find_interface()
 
-#query_resselectors = []
+    #query_resselectors = []
 
-#reference_pose = pose_from_file(os.path.join('test_inputs','query.pdb'))
-reference_interface = [126,127,125,19,124,80,79,128,78,18,76,129,11,16,14,81,13,116,12,115,15,9,8,7]
-#reference_interface = [2,4,5,6,7]
-#reference_selector = list_to_res_selector(reference_interface)
-query_pymol = pymol.cmd.load(os.path.join('test_inputs', pdbid +
-    '.clean.pdb'), 'query')
-reference_pymol = pymol.cmd.load(os.path.join('test_inputs','reference.pdb'), 'reference')
-
-i = 0
-best_i = 0
-best_rmsd = 999
-for query_interface in interface.pdb_interfaces:
-    try:
-        alignment = cealign(reference_pymol, query_pymol, reference_interface,
-                query_interface, window=3)
-        pymol.cmd.save('test_{}.pse'.format(i))
-        print(alignment['RMSD'])
-        print(alignment)
-        if alignment['RMSD'] < best_rmsd:
-            best_rmsd = alignment['RMSD']
-            best_i = i
-    except:
-        print('could not align')
-
-    i += 1
-print('Best interface: test_{}.pse'.format(best_i))
+    #reference_selector = list_to_res_selector(reference_interface)
+    
+    align_interfaces(interface, reference_interfaces, pdbid,
+        reference_pdb)
