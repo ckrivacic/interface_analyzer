@@ -6,8 +6,8 @@ from pyrosetta.rosetta.protocols.fold_from_loops.movers import AlignByResidueSel
 import numpy as np
 import sys, os
 # Requires python3.7. Change below to your pymol path.
-sys.path.insert(1,'/home/krivacic/software/pymol/lib/python3.7/site-packages')
-sys.path.insert(1,'/home/krivacic/software/pymol/lib/python3.7')
+#sys.path.insert(1,'/home/krivacic/software/pymol/lib/python3.7/site-packages')
+#sys.path.insert(1,'/home/krivacic/software/pymol/lib/python3.7')
 import pymol
 
 class PyInterface(object):
@@ -42,7 +42,9 @@ class PyInterface(object):
 
 def cealign(reference, query, reference_reslist, query_reslist, window=8):
     query_selstr = "query and ({})".format(reslist_to_selstr(query_reslist))
+    pymol.cmd.show('lines',query_selstr)
     reference_selstr = "reference and ({})".format(reslist_to_selstr(reference_reslist))
+    pymol.cmd.show('lines',reference_selstr)
     alignment_str = "cealign {}, {}".format(reference_selstr,
             query_selstr)
     return pymol.cmd.cealign(reference_selstr, query_selstr, window=window)
@@ -51,8 +53,9 @@ def cealign(reference, query, reference_reslist, query_reslist, window=8):
 For testing
 '''
 init()
+pymol.finish_launching(['pymol','-qc'])
 
-pdbid = '5T35'
+pdbid = '3zpz'
 pose = pose_from_rcsb(pdbid, 'test_inputs')
 interface = PyInterface(pose)
 interface.find_interface()
@@ -67,17 +70,21 @@ query_pymol = pymol.cmd.load(os.path.join('test_inputs', pdbid +
     '.clean.pdb'), 'query')
 reference_pymol = pymol.cmd.load(os.path.join('test_inputs','reference.pdb'), 'reference')
 
-alignment = cealign(reference_pymol, query_pymol, reference_interface,
-        interface.pdb_interfaces[0], window=3)
-print(alignment['RMSD'])
+i = 0
+best_i = 0
+best_rmsd = 999
+for query_interface in interface.pdb_interfaces:
+    try:
+        alignment = cealign(reference_pymol, query_pymol, reference_interface,
+                query_interface, window=3)
+        pymol.cmd.save('test_{}.pse'.format(i))
+        print(alignment['RMSD'])
+        print(alignment)
+        if alignment['RMSD'] < best_rmsd:
+            best_rmsd = alignment['RMSD']
+            best_i = i
+    except:
+        print('could not align')
 
-'''
-The following requires same number of atoms or residues in each pose.
-Probably no good for what we want to do.
-align = AlignByResidueSelectorMover()
-align.reference_pose(reference_pose)
-align.reference_selector(reference_selector)
-for interface_selector in query_resselectors:
-    align.query_selector(interface_selector)
-    align.apply(pose)
-'''
+    i += 1
+print('Best interface: test_{}.pse'.format(best_i))
