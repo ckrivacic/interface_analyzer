@@ -57,6 +57,7 @@ def cealign(reference, query, reference_reslist, query_reslist, pdbid, window=8)
     alignment_str = "cealign {}, {}".format(reference_selstr,
             query_selstr)
     pymol.util.cbc(selection=pdbid)
+    pymol.cmd.color('white','reference and name c*')
     return pymol.cmd.cealign(reference_selstr, query_selstr, window=window)
 
 
