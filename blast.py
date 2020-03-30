@@ -27,6 +27,7 @@ if __name__=='__main__':
     #pdbid = sys.argv[1]
     #run_blast(pdbid)
     seq = get_sequence(sys.argv[1])
+    print(seq)
     blasts = []
     for s in seq:
         print(str(s.seq))
