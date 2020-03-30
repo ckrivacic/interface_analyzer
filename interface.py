@@ -101,8 +101,6 @@ class PyMOLAligner(object):
         best_rmsd = 999
         formatted_outdir = os.path.join(self.output_dir,
                 '{}_{}'.format(self.pdbid, self.aligner))
-        if not os.path.exists(formatted_outdir):
-            os.mkdir(formatted_outdir)
         for query_interface in self.query_interface.pdb_interfaces:
             for reference_interface in self.reference_interfaces:
                 try:
@@ -112,6 +110,8 @@ class PyMOLAligner(object):
                     print(alignment)
                     if self.aligner=='cealign':
                         if alignment['RMSD'] < 3.0:
+                            if not os.path.exists(formatted_outdir):
+                                os.mkdir(formatted_outdir)
                             pymol.cmd.center('reference')
                             pymol.cmd.save('{}/{}_{}_{}_length_{:2f}_rmsd.pse'.format(formatted_outdir,
                                 self.pdbid, i,
@@ -121,6 +121,8 @@ class PyMOLAligner(object):
                             best_i = i
                     elif self.aligner=='align': 
                         if alignment[0] < 3.0:
+                            if not os.path.exists(formatted_outdir):
+                                os.mkdir(formatted_outdir)
                             pymol.cmd.center('reference')
                             pymol.cmd.save('{}/{}_{}_{}_atoms_{:2f}_rmsd.pse'.format(formatted_outdir,
                                 self.pdbid, i, alignment[1], alignment[0]))

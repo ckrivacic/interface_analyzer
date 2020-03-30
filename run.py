@@ -49,7 +49,8 @@ if __name__=='__main__':
             interfaces.find_interface()
 
             interface_aligner = PyMOLAligner(aligner, interfaces, reference_interfaces, pdbid,
-                    reference_pdb, output_dir=uniprot_id)
+                    reference_pdb,
+                    output_dir=os.path.join('outputs',uniprot_id))
             interface_aligner.align_interfaces()
 
         f.close()
