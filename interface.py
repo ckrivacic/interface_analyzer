@@ -46,9 +46,11 @@ class PyInterface(object):
         self.pdb_interfaces = []
         for interface_obj in self.interfaces:
             for side in interface_obj.pair_list():
-                self.pdb_interfaces.append(reslist_to_pdb_numbers(side, pose))
+                self.pdb_interfaces.append(reslist_to_pdb_numbers(side,
+                    self.pose))
 
-def cealign(reference, query, reference_reslist, query_reslist, pdbid, window=8):
+def align(reference, query, reference_reslist, query_reslist, pdbid,
+        window=8, alignment='cealign'):
     pymol.cmd.hide('lines','all')
     query_selstr = "{} and ({})".format(pdbid, reslist_to_selstr(query_reslist))
     pymol.cmd.show('lines',query_selstr)
@@ -58,11 +60,16 @@ def cealign(reference, query, reference_reslist, query_reslist, pdbid, window=8)
             query_selstr)
     pymol.util.cbc(selection=pdbid)
     pymol.cmd.color('white','reference and name c*')
-    return pymol.cmd.cealign(reference_selstr, query_selstr, window=window)
+    #return pymol.cmd.cealign(reference_selstr, query_selstr, window=window)
+    if alignment=='cealign':
+        return pymol.cmd.cealign(reference_selstr, query_selstr, window=window)
+    else:
+        return pymol.cmd.align(reference_selstr, query_selstr, cycles=4)
 
 
 def align_interfaces(query_interface, reference_interfaces, pdbid,
         reference_pdb, input_dir='test_inputs'):
+    do_cealign=False
     query_pymol = pymol.cmd.load(os.path.join(input_dir, pdbid +
         '.clean.pdb'), pdbid)
     #print(pymol.cmd.get_title(query_pymol, 0))
@@ -72,17 +79,33 @@ def align_interfaces(query_interface, reference_interfaces, pdbid,
     best_rmsd = 999
     for query_interface in query_interface.pdb_interfaces:
         for reference_interface in reference_interfaces:
-            try:
-                alignment = cealign(reference_pymol, query_pymol, reference_interface,
-                        query_interface, pdbid, window=3)
-                print(alignment)
+            #try:
+            alignment = align(reference_pymol, query_pymol, reference_interface,
+                    query_interface, pdbid, window=3, alignment='align')
+            print(i)
+            print(alignment)
+            if do_cealign==True:
                 if alignment['RMSD'] < 3.0:
-                    pymol.cmd.save('{}_{}_rmsd_{}.pse'.format(pdbid,i,alignment['RMSD']))
+                    if not os.path.exists(pdbid + '_cealign'):
+                        os.mkdir(pdbid + '_cealign')
+                    pymol.cmd.center('reference')
+                    pymol.cmd.save('{}/{}_{}_{:02d}_rmsd.pse'.format(pdbid +
+                        '_cealign',pdbid,i,alignment['RMSD']))
                 if alignment['RMSD'] < best_rmsd:
                     best_rmsd = alignment['RMSD']
                     best_i = i
-            except:
-                print('could not align {} with {}'.format(query_interface, reference_interface))
+            else: 
+                if alignment[0] < 3.0:
+                    if not os.path.exists(pdbid + '_align'):
+                        os.mkdir(pdbid + '_align')
+                    pymol.cmd.center('reference')
+                    pymol.cmd.save('{}/{}_{}_{}_atoms_{:2f}_rmsd.pse'.format(pdbid +
+                        '_align',pdbid,i,alignment[1],alignment[0]))
+                if alignment[0] < best_rmsd:
+                    best_rmsd = alignment[0]
+                    best_i = i
+            #except:
+            #    print('could not align {} with {}'.format(query_interface, reference_interface))
 
             i += 1
     print('Best interface: test_{}.pse'.format(best_i))
