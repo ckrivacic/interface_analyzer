@@ -105,30 +105,30 @@ class PyMOLAligner(object):
             os.mkdir(formatted_outdir)
         for query_interface in self.query_interface.pdb_interfaces:
             for reference_interface in self.reference_interfaces:
-                #try:
-                alignment = self.align(reference_interface,
-                        query_interface)
-                print(i)
-                print(alignment)
-                if self.aligner=='cealign':
-                    if alignment['RMSD'] < 3.0:
-                        pymol.cmd.center('reference')
-                        pymol.cmd.save('{}/{}_{}_{}_length_{:2f}_rmsd.pse'.format(formatted_outdir,
-                            self.pdbid, i,
-                            alignment['alignment_length'], alignment['RMSD']))
-                    if alignment['RMSD'] < best_rmsd:
-                        best_rmsd = alignment['RMSD']
-                        best_i = i
-                elif self.aligner=='align': 
-                    if alignment[0] < 3.0:
-                        pymol.cmd.center('reference')
-                        pymol.cmd.save('{}/{}_{}_{}_atoms_{:2f}_rmsd.pse'.format(formatted_outdir,
-                            self.pdbid, i, alignment[1], alignment[0]))
-                    if alignment[0] < best_rmsd:
-                        best_rmsd = alignment[0]
-                        best_i = i
-                #except:
-                #    print('could not align {} with {}'.format(query_interface, reference_interface))
+                try:
+                    alignment = self.align(reference_interface,
+                            query_interface)
+                    print(i)
+                    print(alignment)
+                    if self.aligner=='cealign':
+                        if alignment['RMSD'] < 3.0:
+                            pymol.cmd.center('reference')
+                            pymol.cmd.save('{}/{}_{}_{}_length_{:2f}_rmsd.pse'.format(formatted_outdir,
+                                self.pdbid, i,
+                                alignment['alignment_length'], alignment['RMSD']))
+                        if alignment['RMSD'] < best_rmsd:
+                            best_rmsd = alignment['RMSD']
+                            best_i = i
+                    elif self.aligner=='align': 
+                        if alignment[0] < 3.0:
+                            pymol.cmd.center('reference')
+                            pymol.cmd.save('{}/{}_{}_{}_atoms_{:2f}_rmsd.pse'.format(formatted_outdir,
+                                self.pdbid, i, alignment[1], alignment[0]))
+                        if alignment[0] < best_rmsd:
+                            best_rmsd = alignment[0]
+                            best_i = i
+                except:
+                    print('could not align {} with {}'.format(query_interface, reference_interface))
 
                 i += 1
         print('Best alignment by RMSD: alignment {}'.format(best_i))

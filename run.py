@@ -48,7 +48,8 @@ if __name__=='__main__':
             interfaces = PyInterface(pose)
             interfaces.find_interface()
 
-            aligner = PyMOLAligner(aligner, interfaces, reference_interfaces, pdbid,
+            interface_aligner = PyMOLAligner(aligner, interfaces, reference_interfaces, pdbid,
                     reference_pdb, output_dir=uniprot_id)
-            aligner.align_interfaces()
+            interface_aligner.align_interfaces()
+
         f.close()
