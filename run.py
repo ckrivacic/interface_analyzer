@@ -28,6 +28,7 @@ if __name__=='__main__':
         pickle_path = os.path.join('blasts','{}_blast.pkl'.format(s.id))
         if not os.path.exists(pickle_path):
             blast = run_blast(str(s.seq))
+            print(blast)
             if blast:
                 with open(pickle_path,'wb') as f:
                     pkl.dump(blast, f)
@@ -38,7 +39,7 @@ if __name__=='__main__':
         blasts.append(blast)
 
     for blast in blasts: # Generally should only be 1 blast record
-        pdbs = blast.getHits(percent_identity=70)
+        pdbs = blast.getHits()
         f = open('{}_pdbs.txt'.format(sys.argv[1]), 'w')
         for pdbid in pdbs:
             f.write(pdbid + '\n')
@@ -52,5 +53,6 @@ if __name__=='__main__':
                     reference_pdb,
                     output_dir=os.path.join('outputs',uniprot_id))
             interface_aligner.align_interfaces()
+            del interface_aligner
 
         f.close()

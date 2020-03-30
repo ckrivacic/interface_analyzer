@@ -152,5 +152,10 @@ if __name__=='__main__':
 
     #reference_selector = list_to_res_selector(reference_interface)
     
-    align_interfaces(interface, reference_interfaces, pdbid,
-        reference_pdb)
+    #align_interfaces(interface, reference_interfaces, pdbid,
+    #    reference_pdb)
+    aligner='align'
+    interface_aligner = PyMOLAligner(aligner, interface, reference_interfaces, pdbid,
+            reference_pdb,
+            output_dir=os.path.join('test_outputs'))
+    interface_aligner.align_interfaces()
