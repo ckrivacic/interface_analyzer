@@ -1,5 +1,6 @@
 from pyrosetta import *
 from pyrosetta.rosetta.core.select import residue_selector
+from numeric import intlist_to_vector1_size
 import os, wget
 
 

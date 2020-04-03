@@ -65,6 +65,8 @@ class PyMOLAligner(object):
         self.reference_pdb = reference_pdb
         # IO
         self.output_dir = output_dir
+        if not os.path.exists(self.output_dir):
+            os.mkdir(self.output_dir)
         self.input_dir = input_dir
         # Parameter for align
         self.cycles=cycles
@@ -157,5 +159,5 @@ if __name__=='__main__':
     aligner='align'
     interface_aligner = PyMOLAligner(aligner, interface, reference_interfaces, pdbid,
             reference_pdb,
-            output_dir=os.path.join('test_outputs'))
+            output_dir=os.path.join('outputs','Q969X5'))
     interface_aligner.align_interfaces()
