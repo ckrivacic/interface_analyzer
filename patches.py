@@ -36,6 +36,8 @@ class Patches(object):
         reslist =\
                 res_selector_to_size_list(surface_selector.apply(self.pose))
         if self.reslist:
+            # If a reslist is already defined, only  take surface
+            # residues that are in that reslist
             reslist = [res for res in reslist if res in self.reslist]
         self.reslist = reslist
 
