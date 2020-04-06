@@ -3,7 +3,7 @@ Usage: run <UniProt> [options]
 
 Options:
     --aligner=STR  Run cealign instead of default align in PyMOL.
-    [default: 'align']
+    [default: align]
 """
 from blast import *
 from interface import *
@@ -39,7 +39,7 @@ if __name__=='__main__':
         blasts.append(blast)
 
     for blast in blasts: # Generally should only be 1 blast record
-        pdbs = blast.getHits()
+        pdbs = blast.getHits(percent_identity=69)
         f = open('{}_pdbs.txt'.format(sys.argv[1]), 'w')
         for pdbid in pdbs:
             f.write(pdbid + '\n')

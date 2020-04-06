@@ -43,7 +43,7 @@ def reslist_to_pdb_numbers(reslist, pose):
     return poselist
 
 
-def reslist_to_selstr(reslist):
+def reslist_to_selstr(reslist, chain='A'):
     selection = []
     for res in reslist:
         try:
@@ -55,7 +55,7 @@ def reslist_to_selstr(reslist):
             # resnum and chain. Can add an option to specify chain
             # later.
             resnum = res
-            chain = 'A'
+            chain = chain
         selstr = ' (resi {} and chain {}) '.format(resnum, chain)
         selection.append(selstr)
 

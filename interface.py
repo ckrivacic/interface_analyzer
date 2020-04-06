@@ -72,38 +72,49 @@ class PyMOLAligner(object):
         self.cycles=cycles
         # Parameter for cealign
         self.window=3
+        self.query_pymol = pymol.cmd.load(os.path.join(self.input_dir, self.pdbid +
+            '.clean.pdb'), self.pdbid)
+        #print(pymol.cmd.get_title(query_pymol, 0))
+        self.reference_pymol = pymol.cmd.load(self.reference_pdb, 'reference')
+        pymol.cmd.alter('reference', "chain='ZZ'")
 
-
-    def align(self,  reference_reslist, query_reslist):
+    def align(self, reference_reslist, query_reslist):
+        '''
+        Align a reference patch with a query patch using the defined
+        aligner.
+        '''
         pymol.cmd.hide('lines','all')
         query_selstr = "{} and ({})".format(self.pdbid, reslist_to_selstr(query_reslist))
         pymol.cmd.show('lines', query_selstr)
-        reference_selstr = "reference and ({})".format(reslist_to_selstr(reference_reslist))
+        reference_selstr = "reference and ({})".format(reslist_to_selstr(reference_reslist, chain='ZZ'))
         pymol.cmd.show('lines', reference_selstr)
         alignment_str = "cealign {}, {}".format(reference_selstr,
                 query_selstr)
         pymol.util.cbc(selection=self.pdbid)
         pymol.cmd.color('white','reference and name c*')
-        #return pymol.cmd.cealign(reference_selstr, query_selstr, window=window)
-        if self.aligner=='cealign':
+        # return pymol.cmd.cealign(reference_selstr, query_selstr, window=window)
+        if self.aligner == 'cealign':
             return pymol.cmd.cealign(reference_selstr, query_selstr,
-                    window=self.window)
-        elif self.aligner=='align':
+                                   window=self.window)
+        elif self.aligner == 'align':
             return pymol.cmd.align(reference_selstr, query_selstr,
-                    cycles=self.cycles)
-
+                                   cycles=self.cycles)
+        else:
+            # Default to align
+            return pymol.cmd.align(reference_selstr, query_selstr,
+                                   cycles=self.cycles)
 
     def align_interfaces(self):
-        self.query_pymol = pymol.cmd.load(os.path.join(self.input_dir, self.pdbid +
-            '.clean.pdb'), self.pdbid)
-        #print(pymol.cmd.get_title(query_pymol, 0))
-        self.reference_pymol = pymol.cmd.load(self.reference_pdb, 'reference')
+        '''
+        Align all interfaces defined in reference and query proteins.
+        '''
         i = 0
         best_i = 0
         best_rmsd = 999
         formatted_outdir = os.path.join(self.output_dir,
                 '{}_{}'.format(self.pdbid, self.aligner))
         for query_interface in self.query_interface.pdb_interfaces:
+            query_chain = query_interface[0].split(' ')[1]
             for reference_interface in self.reference_interfaces:
                 try:
                     alignment = self.align(reference_interface,
@@ -114,10 +125,23 @@ class PyMOLAligner(object):
                         if alignment['RMSD'] < 3.0:
                             if not os.path.exists(formatted_outdir):
                                 os.mkdir(formatted_outdir)
+                            if not os.path.exists(os.path.join(formatted_outdir,
+                                'combined')):
+                                os.mkdir(os.path.join(formatted_outdir,
+                                    'combined'))
                             pymol.cmd.center('reference')
-                            pymol.cmd.save('{}/{}_{}_{}_length_{:2f}_rmsd.pse'.format(formatted_outdir,
-                                self.pdbid, i,
-                                alignment['alignment_length'], alignment['RMSD']))
+                            name = '{}_{}_length_{}_rmsd_{:.2f}'.format(self.pdbid,
+                                    i, alignment['alignment_length'],
+                                    alignment['RMSD'])
+                            pymol.cmd.save(os.path.join(formatted_outdir,
+                                name + '.pse'))
+                            pymol.cmd.create('combined', 'reference or ('
+                                    + self.pdbid + ' and not chain ' +
+                                    query_chain + ')')
+                            pymol.cmd.save(os.path.join(formatted_outdir,
+                                        'combined', name + '.pdb'),
+                                        'combined')
+                            pymol.cmd.delete('combined')
                         if alignment['RMSD'] < best_rmsd:
                             best_rmsd = alignment['RMSD']
                             best_i = i
@@ -125,9 +149,23 @@ class PyMOLAligner(object):
                         if alignment[0] < 3.0:
                             if not os.path.exists(formatted_outdir):
                                 os.mkdir(formatted_outdir)
+                            if not os.path.exists(os.path.join(formatted_outdir,
+                                'combined')):
+                                os.mkdir(os.path.join(formatted_outdir,
+                                    'combined'))
                             pymol.cmd.center('reference')
-                            pymol.cmd.save('{}/{}_{}_{}_atoms_{:2f}_rmsd.pse'.format(formatted_outdir,
-                                self.pdbid, i, alignment[1], alignment[0]))
+                            name = '{}_{}_length_{}_rmsd_{:.2f}'.format(self.pdbid,
+                                    i, alignment[1],
+                                    alignment[0])
+                            pymol.cmd.save(os.path.join(formatted_outdir,
+                                name + '.pse'))
+                            pymol.cmd.create('combined', 'reference or ('
+                                    + self.pdbid + ' and not chain ' +
+                                    query_chain + ')')
+                            pymol.cmd.save(os.path.join(formatted_outdir,
+                                        'combined', name + '.pdb'),
+                                        'combined')
+                            pymol.cmd.delete('combined')
                         if alignment[0] < best_rmsd:
                             best_rmsd = alignment[0]
                             best_i = i
