@@ -62,7 +62,7 @@ class Patches(object):
         neighbors = self.resmap[(self.resmap['res1']==resnum) &
                 (self.resmap['dist'] <
                     cutoff)].sort_values(by='dist')['res2']
-        return neighbors[0:n].tolist()
+        return set(neighbors[0:n].tolist())
 
 
 if __name__=='__main__':
