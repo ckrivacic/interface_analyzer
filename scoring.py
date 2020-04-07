@@ -8,8 +8,11 @@ def motif_scorefxn():
     '''
     sfxn = ScoreFunction()
     score_manager = rosetta.core.scoring.ScoreTypeManager()
-    score_term = score_manager.score_type_from_name('motif_dock')
-    sfxn.set_weight(score_term, 1)
+    motif_term = score_manager.score_type_from_name('motif_dock')
+    sfxn.set_weight(motif_term, 1)
+    vdw_term = score_manager.score_type_from_name('interchain_vdw')
+    sfxn.set_weight(vdw_term, 1)
+    print(sfxn.get_nonzero_weighted_scoretypes())
     return sfxn
 
 
@@ -30,5 +33,11 @@ def score_pdbs(directory):
     print(out_dict)
 
 if __name__=='__main__':
-    init()
+    init('-docking_low_res_score motif_dock_score \
+-mh:path:scores_BB_BB \
+/home/krivacic/rosetta/database/additional_protocol_data/motif_dock/xh_16_ \
+-mh:score:use_ss1 false \
+-mh:score:use_ss2 false \
+-mh:score:use_aa1 true \
+-mh:score:use_aa2 true')
     score_pdbs(sys.argv[1])
