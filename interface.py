@@ -46,6 +46,10 @@ class PyInterface():
     @cutoff.setter
     def cutoff(self, cutoff):
         self.cutoff_ = cutoff
+
+    def set_dataframe(self, df):
+        '''Load a previously generated dataframe'''
+        self.dataframe = df
     
     def find_interface(self):
         for jump in range(1, self.pose.fold_tree().num_jump() + 1):
@@ -252,7 +256,7 @@ class PyMOLAligner(object):
 
     def align_patches(self):
         '''
-        Align all interfaces defined in reference and query proteins.
+        Align all interface patches defined in reference and query proteins.
         '''
         i = 0
         best_i = 0
@@ -266,14 +270,20 @@ class PyMOLAligner(object):
             if len(query_interface) == 0:
                 # Nothing to be done, no interface
                 continue
-            query_chain = query_interface[0].split(' ')[1]
+            query_chain = row['pymol_chain']
             reference_interface = row['pymol_reference_interface']
+            self.interface.dataframe.at[idx,'alignment'] = \
+                    self.aligner
             try:
                 alignment = self.align(reference_interface,
                         query_interface)
                 print(i)
                 print(alignment)
                 if self.aligner=='cealign':
+                    self.interface.dataframe.at[idx,'cealign_rmsd'] =\
+                            alignment['RMSD']
+                    self.interface.dataframe.at[idx,'cealign_len'] =\
+                            alignment['alignment_length']
                     if alignment['RMSD'] < 3.0:
                         if not os.path.exists(formatted_outdir):
                             os.mkdir(formatted_outdir)
@@ -293,7 +303,7 @@ class PyMOLAligner(object):
                         pymol.cmd.save(os.path.join(formatted_outdir,
                                     'combined', name + '.pdb'),
                                     'combined')
-                        self.interface.dataframe.at[idx,'combined_pdb_path']=\
+                        self.interface.dataframe.at[idx,'cealign_combined_pdb_path']=\
                                 os.path.join(formatted_outdir, 'combined',
                                 name + '.pdb')
                         pymol.cmd.delete('combined')
@@ -301,6 +311,10 @@ class PyMOLAligner(object):
                         best_rmsd = alignment['RMSD']
                         best_i = i
                 elif self.aligner=='align': 
+                    self.interface.dataframe.at[idx,'align_rmsd'] =\
+                            alignment[0]
+                    self.interface.dataframe.at[idx,'align_atoms'] =\
+                            alignment[1]
                     if alignment[0] < 3.0:
                         if not os.path.exists(formatted_outdir):
                             os.mkdir(formatted_outdir)
@@ -320,7 +334,7 @@ class PyMOLAligner(object):
                         pymol.cmd.save(os.path.join(formatted_outdir,
                                     'combined', name + '.pdb'),
                                     'combined')
-                        self.interface.dataframe.at[idx,'combined_pdb_path']=\
+                        self.interface.dataframe.at[idx,'align_combined_pdb_path']=\
                                 os.path.join(formatted_outdir, 'combined',
                                 name + '.pdb')
                         pymol.cmd.delete('combined')
@@ -332,6 +346,13 @@ class PyMOLAligner(object):
 
             i += 1
         print('Best alignment by RMSD: alignment {}'.format(best_i))
+        num = 0
+        df_file = os.path.join(formatted_outdir, 'patches.csv')
+        while os.path.exists(df_file):
+            num += 1
+            df_file = os.path.join(self.output_dir,
+                    'patches_{}.pkl'.format(num))
+        self.interface.dataframe.to_pickle(df_file)
 
     def align_interfaces(self):
         '''
