@@ -26,8 +26,9 @@ class PyInterface():
     '''
     Class to handle interface definitions.
     '''
-    def __init__(self, pose):
+    def __init__(self, pose, reference_pose):
         self.pose = pose
+        self.reference_pose = reference_pose
         scorefxn = create_score_function('ref2015')
         scorefxn(self.pose)
         self.cutoff_ = 8.0
@@ -35,6 +36,7 @@ class PyInterface():
         self.patch_cutoff = 20
         self.interfaces = []
         self.pdb_interfaces = []
+        self.reference_interfaces = []
         self.dataframe = None
 
     @property
@@ -53,12 +55,54 @@ class PyInterface():
             self.interfaces.append(interface)
         self.set_pdb_interface()
 
+    def set_pdb_interface(self, residue_list, chain='Z'):
+        '''
+        Don't use this at the moment; the idea was to use the same class
+        to define the reference interface, but that may not work since
+        this is a monomer interface. Keping this code for now just in
+        case.
+        '''
+        pdbinfo = self.pose.pdb_info()
+        self.pdb_interfaces = []
+        self.interfaces = []
+        for resi in residue_list:
+            self.pdb_interfaces.append(' '.join([str(resi), chain]))
+            self.interfaces.append(pdbinfo.pdb2pose(chain, resi))
+
+    def add_pdb_interface(self, residue_list, chain='Z'):
+        '''
+        Don't use this at the moment; the idea was to use the same class
+        to define the reference interface, but that may not work since
+        this is a monomer interface. Keping this code for now just in
+        case.
+        '''
+        pdbinfo = self.pose.pdb_info()
+        temp_interface = []
+        temp_pdb_interface = []
+        for resi in residue_list:
+            temp_pdb_interface.append(' '.join([str(resi), chain]))
+            temp_interface.append(pdbinfo.pdb2pose(chain, resi))
+        self.interfaces.append(temp_interface)
+        self.pdb_interfaces.append(temp_pdb_interface)
+
     def set_pdb_interface(self):
         self.pdb_interfaces = []
         for interface_obj in self.interfaces:
             for side in interface_obj.pair_list():
                 self.pdb_interfaces.append(reslist_to_pdb_numbers(side,
                     self.pose))
+
+    def set_reference_interfaces(self, list_of_lists):
+        '''
+        Define reference interface
+        '''
+        self.reference_interfaces = list_of_lists
+
+    def add_reference_interface(self, list_of_pdb_residues):
+        '''
+        Add to reference interface definition
+        '''
+        self.reference_interfaces.append(list_of_pdb_residus)
 
     def find_patches(self):
         '''
@@ -93,18 +137,24 @@ class PyInterface():
                 # No need to add a patch twice
                 if not any(d['rosetta_patch'] == patch for d in
                         df_list):
-                    row = {
-                            'pymol_chain': chainA,
-                            'rosetta_chain': rosetta_chainA,
-                            'pymol_tarchain': chainB,
-                            'rosetta_tarchain': rosetta_chainB,
-                            'rosetta_full_interface': sideA,
-                            'pymol_full_interface': sideA_pymol,
-                            'rosetta_patch': patch,
-                            'pymol_patch': reslist_to_pdb_numbers(patch,
-                                self.pose)
-                            }
-                    df_list.append(row)
+                    for reslist in self.reference_interfaces:
+                        row = {
+                                'pymol_chain': chainA,
+                                'rosetta_chain': rosetta_chainA,
+                                'pymol_tarchain': chainB,
+                                'rosetta_tarchain': rosetta_chainB,
+                                'rosetta_full_interface': sideA,
+                                'pymol_full_interface': sideA_pymol,
+                                'rosetta_patch': patch,
+                                'pymol_patch': reslist_to_pdb_numbers(patch,
+                                    self.pose),
+                                'pymol_reference_interface':
+                                int_list_to_pdb_numbers(reslist),
+                                'rosetta_reference_interface':
+                                rosetta_numbers_from_pdb(reslist,
+                                    self.reference_pose),
+                                }
+                        df_list.append(row)
 
             # Get patches for side B
             del patches
@@ -122,31 +172,35 @@ class PyInterface():
                 # No need to add a patch twice
                 if not any(d['rosetta_patch'] == patch for d in
                         df_list):
-                    row = {
-                            'pymol_chain': chainB,
-                            'rosetta_chain': rosetta_chainB,
-                            'pymol_tarchain': chainA,
-                            'rosetta_tarchain': rosetta_chainA,
-                            'rosetta_full_interface': sideB,
-                            'pymol_full_interface': sideB_pymol,
-                            'rosetta_patch': patch,
-                            'pymol_patch': reslist_to_pdb_numbers(patch,
-                                self.pose)
-                            }
-                    df_list.append(row)
+                    for reslist in self.reference_interfaces:
+                        row = {
+                                'pymol_chain': chainB,
+                                'rosetta_chain': rosetta_chainB,
+                                'pymol_tarchain': chainA,
+                                'rosetta_tarchain': rosetta_chainA,
+                                'rosetta_full_interface': sideB,
+                                'pymol_full_interface': sideB_pymol,
+                                'rosetta_patch': patch,
+                                'pymol_patch': reslist_to_pdb_numbers(patch,
+                                    self.pose),
+                                'pymol_reference_interface':
+                                int_list_to_pdb_numbers(reslist),
+                                'rosetta_reference_interface':
+                                rosetta_numbers_from_pdb(reslist,
+                                    self.reference_pose),
+                                }
+                        df_list.append(row)
         self.dataframe = pd.DataFrame(df_list)
 
 
 class PyMOLAligner(object):
-    def __init__(self, aligner, query_interface, reference_interfaces,
+    def __init__(self, aligner, interface,
             pdbid, reference_pdb, output_dir='.',
             input_dir='test_inputs', window=3, cycles=5):
         # String, either 'cealign' or 'align'
         self.aligner=aligner
         # PyInterface object
-        self.query_interface = query_interface
-        # Reference interfaces list
-        self.reference_interfaces = reference_interfaces
+        self.interface = interface
         # PDBID for naming
         self.pdbid = pdbid
         # Path to reference PDB
@@ -164,6 +218,10 @@ class PyMOLAligner(object):
             '.clean.pdb'), self.pdbid)
         #print(pymol.cmd.get_title(query_pymol, 0))
         self.reference_pymol = pymol.cmd.load(self.reference_pdb, 'reference')
+
+        # Make reference chain Z so that we can combine it with the
+        # aligned structure later (THIS MEANS IT ONLY WORKS WITH
+        # MONOMER REFERENCE STRUCTURES)
         pymol.cmd.alter('reference', "chain='Z'")
 
     def align(self, reference_reslist, query_reslist):
@@ -192,7 +250,7 @@ class PyMOLAligner(object):
             return pymol.cmd.align(reference_selstr, query_selstr,
                                    cycles=self.cycles)
 
-    def align_interfaces(self, align_patches=True):
+    def align_patches(self):
         '''
         Align all interfaces defined in reference and query proteins.
         '''
@@ -201,15 +259,99 @@ class PyMOLAligner(object):
         best_rmsd = 999
         formatted_outdir = os.path.join(self.output_dir,
                 '{}_{}'.format(self.pdbid, self.aligner))
-        if align_patches:
-            query_iterator = self.query_interface.dataframe['pymol_patch']
-        else:
-            query_iterator = self.query_interface.dataframe['pymol_full_interface'].unique()
-        for query_interface in query_iterator:
+        # Leave option to align entire interface instead of patches
+        # To do: add option to align reference interface by patches
+        for idx, row in interface.dataframe.iterrows():
+            query_interface = row['pymol_patch']
             if len(query_interface) == 0:
+                # Nothing to be done, no interface
                 continue
             query_chain = query_interface[0].split(' ')[1]
-            for reference_interface in self.reference_interfaces:
+            reference_interface = row['pymol_reference_interface']
+            try:
+                alignment = self.align(reference_interface,
+                        query_interface)
+                print(i)
+                print(alignment)
+                if self.aligner=='cealign':
+                    if alignment['RMSD'] < 3.0:
+                        if not os.path.exists(formatted_outdir):
+                            os.mkdir(formatted_outdir)
+                        if not os.path.exists(os.path.join(formatted_outdir,
+                            'combined')):
+                            os.mkdir(os.path.join(formatted_outdir,
+                                'combined'))
+                        pymol.cmd.center('reference')
+                        name = '{}_{}_length_{}_rmsd_{:.2f}'.format(self.pdbid,
+                                i, alignment['alignment_length'],
+                                alignment['RMSD'])
+                        pymol.cmd.save(os.path.join(formatted_outdir,
+                            name + '.pse'))
+                        pymol.cmd.create('combined', 'reference or ('
+                                + self.pdbid + ' and not chain ' +
+                                query_chain + ')')
+                        pymol.cmd.save(os.path.join(formatted_outdir,
+                                    'combined', name + '.pdb'),
+                                    'combined')
+                        self.interface.dataframe.at[idx,'combined_pdb_path']=\
+                                os.path.join(formatted_outdir, 'combined',
+                                name + '.pdb')
+                        pymol.cmd.delete('combined')
+                    if alignment['RMSD'] < best_rmsd:
+                        best_rmsd = alignment['RMSD']
+                        best_i = i
+                elif self.aligner=='align': 
+                    if alignment[0] < 3.0:
+                        if not os.path.exists(formatted_outdir):
+                            os.mkdir(formatted_outdir)
+                        if not os.path.exists(os.path.join(formatted_outdir,
+                            'combined')):
+                            os.mkdir(os.path.join(formatted_outdir,
+                                'combined'))
+                        pymol.cmd.center('reference')
+                        name = '{}_{}_length_{}_rmsd_{:.2f}'.format(self.pdbid,
+                                i, alignment[1],
+                                alignment[0])
+                        pymol.cmd.save(os.path.join(formatted_outdir,
+                            name + '.pse'))
+                        pymol.cmd.create('combined', 'reference or ('
+                                + self.pdbid + ' and not chain ' +
+                                query_chain + ')')
+                        pymol.cmd.save(os.path.join(formatted_outdir,
+                                    'combined', name + '.pdb'),
+                                    'combined')
+                        self.interface.dataframe.at[idx,'combined_pdb_path']=\
+                                os.path.join(formatted_outdir, 'combined',
+                                name + '.pdb')
+                        pymol.cmd.delete('combined')
+                    if alignment[0] < best_rmsd:
+                        best_rmsd = alignment[0]
+                        best_i = i
+            except:
+                print('could not align {} with {}'.format(query_interface, reference_interface))
+
+            i += 1
+        print('Best alignment by RMSD: alignment {}'.format(best_i))
+
+    def align_interfaces(self):
+        '''
+        Align all interfaces defined in reference and query proteins.
+        '''
+        i = 0
+        best_i = 0
+        best_rmsd = 999
+        formatted_outdir = os.path.join(self.output_dir,
+                '{}_{}'.format(self.pdbid, self.aligner))
+        # Leave option to align entire interface instead of patches
+        # To do: add option to align reference interface by patches
+        query_iterator = self.interface.dataframe['pymol_full_interface'].unique()
+        reference_interfaces = self.interface.DataFrame['pymol_reference_interface'].unique()
+        for query_interface in query_iterator:
+            if len(query_interface) == 0:
+                # Nothing to be done, no interface
+                continue
+            query_chain = query_interface[0].split(' ')[1]
+            for reference_interface in reference_interfaces:
                 try:
                     alignment = self.align(reference_interface,
                             query_interface)
@@ -279,9 +421,12 @@ if __name__=='__main__':
 
     pdbid = sys.argv[1]
     pose = pose_from_rcsb(pdbid, 'test_inputs')
-    interface = PyInterface(pose)
+    reference_pose = pose_from_file(reference_pdb)
+    interface = PyInterface(pose, reference_pose)
     interface.find_interface()
+    interface.set_reference_interfaces(reference_interfaces)
     interface.find_patches()
+    print(interface.dataframe)
 
     #query_resselectors = []
 
@@ -291,7 +436,8 @@ if __name__=='__main__':
     #    reference_pdb)
     
     aligner='align'
-    interface_aligner = PyMOLAligner(aligner, interface, reference_interfaces, pdbid,
+    interface_aligner = PyMOLAligner(aligner, interface, pdbid,
             reference_pdb,
             output_dir=os.path.join('outputs','Q969X5'))
-    interface_aligner.align_interfaces()
+    interface_aligner.align_patches()
+    print(interface_aligner.interface.dataframe)

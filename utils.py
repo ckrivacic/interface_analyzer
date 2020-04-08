@@ -43,6 +43,27 @@ def reslist_to_pdb_numbers(reslist, pose):
     return poselist
 
 
+def int_list_to_pdb_numbers(reslist, chain='Z'):
+    '''
+    Takes a list of residues with PDB numbering and formats it as a list
+    of strings with the chain number included (i.e., '19_Z')
+    '''
+    pdblist = []
+    for res in reslist:
+        pdblist.append(' '.join([str(res), chain]))
+
+    return pdblist
+
+
+def rosetta_numbers_from_pdb(reslist, pose, chain='A'):
+    '''Get list of rosetta numbers from a list of PDB numbers'''
+    rosetta_list = []
+    for resi in reslist:
+        rosetta_list.append(pose.pdb_info().pdb2pose(chain, resi))
+
+    return rosetta_list
+
+
 def reslist_to_selstr(reslist, chain='A'):
     selection = []
     for res in reslist:
