@@ -22,7 +22,7 @@ def make_pymol_session(df, idx, out='temp.pse', aligner='align'):
 
     # Color all scored residues
     for residue in residue_scores:
-        pdb_res = pdbinfo.pose2pdb(residue).split(' ')
+        pdb_res = pdbinfo.pose2pdb(int(residue)).split(' ')
         resnum = pdb_res[0]
         chain = pdb_res[1]
         color = get_color(residue_scores[residue], minval, maxval)
@@ -30,11 +30,18 @@ def make_pymol_session(df, idx, out='temp.pse', aligner='align'):
             chain))
         pymol.cmd.color(color, 'chain {} and resi {} and name c*'.format(chain, resnum))
 
-    # Show sticks for query interface
-    for residue in row['pymol_patch']:
+    # Show sticks for target patch
+    for residue in row['pymol_target_patch']:
         splt = residue.split(' ')
         resnum = splt[0]
         chain = splt[1]
+        pymol.cmd.show('sticks', 'resi {} and chain {}'.format(resnum,
+            chain))
+
+    for residue in row['pymol_reference_interface']:
+        splt = residue.split(' ')
+        resnum = splt[0]
+        chain = 'Z'
         pymol.cmd.show('sticks', 'resi {} and chain {}'.format(resnum,
             chain))
 
@@ -43,7 +50,7 @@ def make_pymol_session(df, idx, out='temp.pse', aligner='align'):
 
 
 def get_color(value, minval, maxval):
-    cmap = matplotlib.cm.get_cmap('RdBu')
+    cmap = matplotlib.cm.get_cmap('coolwarm')
     fraction = (value - minval) / (maxval - minval)
     rgba = cmap(fraction)
     return '0x' + matplotlib.colors.to_hex(rgba)[1:]

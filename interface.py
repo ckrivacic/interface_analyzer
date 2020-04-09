@@ -32,8 +32,8 @@ class PyInterface():
         scorefxn = create_score_function('ref2015')
         scorefxn(self.pose)
         self.cutoff_ = 8.0
-        self.patch_residues = 5
-        self.patch_cutoff = 20
+        self.patch_residues = 8
+        self.patch_cutoff = 30
         self.interfaces = []
         self.pdb_interfaces = []
         self.reference_interfaces = []
@@ -138,6 +138,13 @@ class PyInterface():
             for resi in sideA:
                 patch = patches.nearest_n_residues(resi,
                         self.patch_residues, cutoff=self.patch_cutoff)
+
+                # Get "partner patch"
+                interacting_residues = []
+                for resi in patch:
+                    partners = vector1_to_python_list(vector1_to_python_list(
+                            interface.contact_list())[resi - 1])
+                    interacting_residues += partners
                 # No need to add a patch twice
                 if not any(d['rosetta_patch'] == patch for d in
                         df_list):
@@ -148,10 +155,15 @@ class PyInterface():
                                 'pymol_tarchain': chainB,
                                 'rosetta_tarchain': rosetta_chainB,
                                 'rosetta_full_interface': sideA,
+                                'rosetta_target_interface': sideB,
                                 'pymol_full_interface': sideA_pymol,
+                                'pymol_target_interface': sideB_pymol,
                                 'rosetta_patch': patch,
                                 'pymol_patch': reslist_to_pdb_numbers(patch,
                                     self.pose),
+                                'rosetta_target_patch': interacting_residues,
+                                'pymol_target_patch': set(reslist_to_pdb_numbers(interacting_residues,
+                                    self.pose)),
                                 'pymol_reference_interface':
                                 int_list_to_pdb_numbers(reslist),
                                 'rosetta_reference_interface':
@@ -173,6 +185,13 @@ class PyInterface():
             for resi in sideB:
                 patch = patches.nearest_n_residues(resi,
                         self.patch_residues, cutoff=self.patch_cutoff)
+
+                # Get "partner patch"
+                interacting_residues = []
+                for resi in patch:
+                    partners = vector1_to_python_list(vector1_to_python_list(
+                            interface.contact_list())[resi - 1])
+                    interacting_residues += partners
                 # No need to add a patch twice
                 if not any(d['rosetta_patch'] == patch for d in
                         df_list):
@@ -183,10 +202,15 @@ class PyInterface():
                                 'pymol_tarchain': chainA,
                                 'rosetta_tarchain': rosetta_chainA,
                                 'rosetta_full_interface': sideB,
+                                'rosetta_target_interface': sideA,
                                 'pymol_full_interface': sideB_pymol,
+                                'pymol_target_interface': sideA_pymol,
                                 'rosetta_patch': patch,
                                 'pymol_patch': reslist_to_pdb_numbers(patch,
                                     self.pose),
+                                'rosetta_target_patch': interacting_residues,
+                                'pymol_target_patch': set(reslist_to_pdb_numbers(interacting_residues,
+                                    self.pose)),
                                 'pymol_reference_interface':
                                 int_list_to_pdb_numbers(reslist),
                                 'rosetta_reference_interface':
@@ -347,11 +371,12 @@ class PyMOLAligner(object):
             i += 1
         print('Best alignment by RMSD: alignment {}'.format(best_i))
         num = 0
-        df_file = os.path.join(formatted_outdir, 'patches.csv')
+        df_file = os.path.join(formatted_outdir, 'patches.pkl')
         while os.path.exists(df_file):
             num += 1
-            df_file = os.path.join(self.output_dir,
+            df_file = os.path.join(self.formatted_outdir,
                     'patches_{}.pkl'.format(num))
+        print(df_file)
         self.interface.dataframe.to_pickle(df_file)
 
     def align_interfaces(self):
@@ -456,7 +481,7 @@ if __name__=='__main__':
     #align_interfaces(interface, reference_interfaces, pdbid,
     #    reference_pdb)
     
-    aligner='align'
+    aligner='cealign'
     interface_aligner = PyMOLAligner(aligner, interface, pdbid,
             reference_pdb,
             output_dir=os.path.join('outputs','Q969X5'))

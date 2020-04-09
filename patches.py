@@ -58,7 +58,7 @@ class Patches(object):
         resmap.columns = ['res1', 'res2', 'dist']
         self.resmap = resmap
 
-    def nearest_n_residues(self, resnum, n, cutoff=15.0):
+    def nearest_n_residues(self, resnum, n, cutoff=30.0):
         neighbors = self.resmap[(self.resmap['res1']==resnum) &
                 (self.resmap['dist'] <
                     cutoff)].sort_values(by='dist')['res2']

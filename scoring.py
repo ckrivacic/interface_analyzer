@@ -38,32 +38,59 @@ def score_pdbs(dataframe, aligner='align'):
         dataframe.at[idx, 'pose_score'] = sfxn(pose)
         interface_total = 0.0
         residue_dict = {}
-        for residue in row['rosetta_full_interface']:
-            # Use Rosetta numbering
+        for residue in row['pymol_target_interface']:
+            resnum = int(residue.split(' ')[0])
+            chain = residue.split(' ')[1]
+            rosettanum = pose.pdb_info().pdb2pose(chain, resnum)
             residue_energy =\
-                    pose.energies().residue_total_energy(residue)
+                    pose.energies().residue_total_energy(rosettanum)
             interface_total += residue_energy
-            residue_dict[residue] = residue_energy
+            residue_dict[rosettanum] = residue_energy
         
+        '''
+        Patches are on the REPLACED chain so commenting this out
+        as that chain is not in this pdb file.
+        Should be looking at reference_total instead, which will be more
+        useful if reference interfaces are defined as patches instead of
+        whole interfaces.
         patch_total = 0
         for residue in row['rosetta_patch']:
             residue_energy =\
                     pose.energies().residue_total_energy(residue)
             patch_total += residue_energy
             residue_dict[residue] = residue_energy
-
-        reference_total = 0
-        for residue in row['rosetta_reference_interface']:
+        '''
+        # Get total for residues in the interacting patch
+        interacting_residues_total = 0
+        for residue in row['pymol_target_patch']:
+            resnum = int(residue.split(' ')[0])
+            chain = residue.split(' ')[1]
+            rosettanum = pose.pdb_info().pdb2pose(chain, resnum)
             residue_energy =\
-                    pose.energies().residue_total_energy(residue)
+                    pose.energies().residue_total_energy(rosettanum)
+            interacting_residues_total += residue_energy
+            residue_dict[rosettanum] = residue_energy
+
+
+        # Total energy for residues in reference chain
+        reference_total = 0
+        for residue in row['pymol_reference_interface']:
+            resnum = int(residue.split(' ')[0])
+            rosettanum = pose.pdb_info().pdb2pose('Z', resnum)
+            residue_energy =\
+                    pose.energies().residue_total_energy(rosettanum)
             reference_total += residue_energy
-            residue_dict[residue] = residue_energy
+            residue_dict[rosettanum] = residue_energy
+        
 
         # Wrap dict in list so that pandas will accept it
         dataframe.at[idx, '{}_residue_scores'.format(aligner)] = [residue_dict]
         # Save total scores
-        dataframe.at[idx, '{}_patch_score'.format(aligner)] = patch_total
+        #dataframe.at[idx, '{}_patch_score'.format(aligner)] = patch_total
         dataframe.at[idx, '{}_interface_score'.format(aligner)] = interface_total
+        dataframe.at[idx, '{}_reference_score'.format(aligner)] = reference_total
+        dataframe.at[idx, '{}_target_patch_score'.format(aligner)] =\
+                interacting_residues_total
 
     print(dataframe)
 
@@ -97,6 +124,7 @@ if __name__=='__main__':
 -mh:score:use_ss2 false \
 -mh:score:use_aa1 true \
 -mh:score:use_aa2 true')
-    df = pd.read_pickle('outputs/Q969X5/patches_1.pkl')
+    df = pd.read_pickle('outputs/Q969X5/3r7c_align/patches.pkl')
     score_pdbs(df)
     df.to_pickle('test_pickle.pkl')
+    df.to_csv('test_csv.csv')
