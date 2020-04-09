@@ -12,7 +12,8 @@ def motif_scorefxn():
     score_manager = rosetta.core.scoring.ScoreTypeManager()
     motif_term = score_manager.score_type_from_name('motif_dock')
     sfxn.set_weight(motif_term, 1)
-    vdw_term = score_manager.score_type_from_name('interchain_vdw')
+    #vdw_term = score_manager.score_type_from_name('interchain_vdw')
+    vdw_term = score_manager.score_type_from_name('fa_rep')
     sfxn.set_weight(vdw_term, 1)
     return sfxn
 

@@ -481,7 +481,7 @@ if __name__=='__main__':
     #align_interfaces(interface, reference_interfaces, pdbid,
     #    reference_pdb)
     
-    aligner='cealign'
+    aligner='align'
     interface_aligner = PyMOLAligner(aligner, interface, pdbid,
             reference_pdb,
             output_dir=os.path.join('outputs','Q969X5'))

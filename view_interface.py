@@ -59,4 +59,4 @@ def get_color(value, minval, maxval):
 if __name__=='__main__':
     init()
     df = pd.read_pickle('test_pickle.pkl')
-    make_pymol_session(df, 83)
+    make_pymol_session(df, 94)
