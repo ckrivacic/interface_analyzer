@@ -294,7 +294,7 @@ class PyMOLAligner(object):
         pymol.cmd.color('white','reference and name c*')
         # return pymol.cmd.cealign(reference_selstr, query_selstr, window=window)
         if self.aligner == 'cealign':
-            return pymol.cmd.cealign(reference_selstr, query_selstr,
+            return pymol.cmd.cealign(query_selstr, reference_selstr,
                                    window=self.window)
         elif self.aligner == 'align':
             return pymol.cmd.align(reference_selstr, query_selstr,
