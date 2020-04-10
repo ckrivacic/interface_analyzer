@@ -6,3 +6,6 @@ numpy
 pandas
 prody
 docopt
+# For TMAlign:
+conda install -c speleo3 tmalign
+conda install -c schrodinger pymol-psico

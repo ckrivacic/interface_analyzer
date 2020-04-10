@@ -299,6 +299,8 @@ class PyMOLAligner(object):
         elif self.aligner == 'align':
             return pymol.cmd.align(reference_selstr, query_selstr,
                                    cycles=self.cycles)
+        elif self.aligner == 'tmalign':
+            return pymol.cmd.tmalign(reference_selstr, query_selstr)
         else:
             # Default to align
             return pymol.cmd.align(reference_selstr, query_selstr,
@@ -330,75 +332,45 @@ class PyMOLAligner(object):
                 print(i)
                 print(alignment)
                 if self.aligner=='cealign':
-                    self.interface.dataframe.at[idx,'cealign_rmsd'] =\
-                            alignment['RMSD']
-                    self.interface.dataframe.at[idx,'cealign_len'] =\
-                            alignment['alignment_length']
-                    if 0.0 < alignment['RMSD'] < 3.0:
-                        if not os.path.exists(formatted_outdir):
-                            os.mkdir(formatted_outdir)
-                        if not os.path.exists(os.path.join(formatted_outdir,
-                            'combined')):
-                            os.mkdir(os.path.join(formatted_outdir,
-                                'combined'))
-                        #pymol.cmd.center('reference')
-                        name = '{}_{}_length_{}_rmsd_{:.2f}'.format(self.pdbid,
-                                i, alignment['alignment_length'],
-                                alignment['RMSD'])
-                        '''
-                        Don't really need this anymore with
-                        view_interface.py
-                        pymol.cmd.save(os.path.join(formatted_outdir,
-                            name + '.pse'))
-                        '''
-                        pymol.cmd.create('combined', 'reference or ('
-                                + self.pdbid + ' and not chain ' +
-                                query_chain + ')')
-                        pymol.cmd.save(os.path.join(formatted_outdir,
-                                    'combined', name + '.pdb'),
-                                    'combined')
-                        self.interface.dataframe.at[idx,'cealign_combined_pdb_path']=\
-                                os.path.join(formatted_outdir, 'combined',
-                                name + '.pdb')
-                        pymol.cmd.delete('combined')
-                    if alignment['RMSD'] < best_rmsd:
-                        best_rmsd = alignment['RMSD']
-                        best_i = i
-                elif self.aligner=='align': 
-                    self.interface.dataframe.at[idx,'align_rmsd'] =\
-                            alignment[0]
-                    self.interface.dataframe.at[idx,'align_atoms'] =\
-                            alignment[1]
-                    if 0.0 < alignment[0] < 3.0:
-                        if not os.path.exists(formatted_outdir):
-                            os.mkdir(formatted_outdir)
-                        if not os.path.exists(os.path.join(formatted_outdir,
-                            'combined')):
-                            os.mkdir(os.path.join(formatted_outdir,
-                                'combined'))
-                        #pymol.cmd.center('reference')
-                        name = '{}_{}_length_{}_rmsd_{:.2f}'.format(self.pdbid,
-                                i, alignment[1],
-                                alignment[0])
-                        '''
-                        Don't really need this anymore with
-                        view_interface.py
-                        pymol.cmd.save(os.path.join(formatted_outdir,
-                            name + '.pse'))
-                        '''
-                        pymol.cmd.create('combined', 'reference or ('
-                                + self.pdbid + ' and not chain ' +
-                                query_chain + ')')
-                        pymol.cmd.save(os.path.join(formatted_outdir,
-                                    'combined', name + '.pdb'),
-                                    'combined')
-                        self.interface.dataframe.at[idx,'align_combined_pdb_path']=\
-                                os.path.join(formatted_outdir, 'combined',
-                                name + '.pdb')
-                        pymol.cmd.delete('combined')
-                    if alignment[0] < best_rmsd:
-                        best_rmsd = alignment[0]
-                        best_i = i
+                    rmsd = alignment['RMSD']
+                    alignment_length = alignment['alignment_length']
+                elif self.aligner=='align':
+                    rmsd = alignment[0]
+                    alignment_length = alignment[1]
+                self.interface.dataframe.at[idx,'{}_rmsd'.format(self.aligner)] =\
+                        rmsd
+                self.interface.dataframe.at[idx,'{}_length'.format(self.aligner)] =\
+                        alignment_length
+                if 0.0 < rmsd < 3.0:
+                    if not os.path.exists(formatted_outdir):
+                        os.mkdir(formatted_outdir)
+                    if not os.path.exists(os.path.join(formatted_outdir,
+                        'combined')):
+                        os.mkdir(os.path.join(formatted_outdir,
+                            'combined'))
+                    #pymol.cmd.center('reference')
+                    name = '{}_{}_length_{}_rmsd_{:.2f}'.format(self.pdbid,
+                            i, alignment_length,
+                            rmsd)
+                    '''
+                    Don't really need this anymore with
+                    view_interface.py
+                    pymol.cmd.save(os.path.join(formatted_outdir,
+                        name + '.pse'))
+                    '''
+                    pymol.cmd.create('combined', 'reference or ('
+                            + self.pdbid + ' and not chain ' +
+                            query_chain + ')')
+                    pymol.cmd.save(os.path.join(formatted_outdir,
+                                'combined', name + '.pdb'),
+                                'combined')
+                    self.interface.dataframe.at[idx,'cealign_combined_pdb_path']=\
+                            os.path.join(formatted_outdir, 'combined',
+                            name + '.pdb')
+                    pymol.cmd.delete('combined')
+                if rmsd < best_rmsd:
+                    best_rmsd = rmsd
+                    best_i = i
             except:
                 print('could not align {} with {}'.format(query_interface, reference_interface))
 
@@ -427,7 +399,7 @@ class PyMOLAligner(object):
         # Leave option to align entire interface instead of patches
         # To do: add option to align reference interface by patches
         query_iterator = self.interface.dataframe['pymol_full_interface'].unique()
-        reference_interfaces = self.interface.DataFrame['pymol_reference_interface'].unique()
+        reference_interfaces = self.interface.dataFrame['pymol_reference_interface'].unique()
         for query_interface in query_iterator:
             if len(query_interface) == 0:
                 # Nothing to be done, no interface
@@ -440,53 +412,37 @@ class PyMOLAligner(object):
                     print(i)
                     print(alignment)
                     if self.aligner=='cealign':
-                        if alignment['RMSD'] < 3.0:
-                            if not os.path.exists(formatted_outdir):
-                                os.mkdir(formatted_outdir)
-                            if not os.path.exists(os.path.join(formatted_outdir,
-                                'combined')):
-                                os.mkdir(os.path.join(formatted_outdir,
-                                    'combined'))
-                            pymol.cmd.center('reference')
-                            name = '{}_{}_length_{}_rmsd_{:.2f}'.format(self.pdbid,
-                                    i, alignment['alignment_length'],
-                                    alignment['RMSD'])
-                            pymol.cmd.save(os.path.join(formatted_outdir,
-                                name + '.pse'))
-                            pymol.cmd.create('combined', 'reference or ('
-                                    + self.pdbid + ' and not chain ' +
-                                    query_chain + ')')
-                            pymol.cmd.save(os.path.join(formatted_outdir,
-                                        'combined', name + '.pdb'),
-                                        'combined')
-                            pymol.cmd.delete('combined')
-                        if alignment['RMSD'] < best_rmsd:
-                            best_rmsd = alignment['RMSD']
-                            best_i = i
-                    elif self.aligner=='align': 
-                        if alignment[0] < 3.0:
-                            if not os.path.exists(formatted_outdir):
-                                os.mkdir(formatted_outdir)
-                            if not os.path.exists(os.path.join(formatted_outdir,
-                                'combined')):
-                                os.mkdir(os.path.join(formatted_outdir,
-                                    'combined'))
-                            pymol.cmd.center('reference')
-                            name = '{}_{}_length_{}_rmsd_{:.2f}'.format(self.pdbid,
-                                    i, alignment[1],
-                                    alignment[0])
-                            pymol.cmd.save(os.path.join(formatted_outdir,
-                                name + '.pse'))
-                            pymol.cmd.create('combined', 'reference or ('
-                                    + self.pdbid + ' and not chain ' +
-                                    query_chain + ')')
-                            pymol.cmd.save(os.path.join(formatted_outdir,
-                                        'combined', name + '.pdb'),
-                                        'combined')
-                            pymol.cmd.delete('combined')
-                        if alignment[0] < best_rmsd:
-                            best_rmsd = alignment[0]
-                            best_i = i
+                        rmsd = alignment['RMSD']
+                        alignment_length = alignment['alignment_length']
+                    elif self.aligner=='align':
+                        rmsd = alignment[0]
+                        alignment_length = alignment[1]
+                    self.interface.dataframe.at[idx,
+                            '{}_rmsd'.format(self.aligner)] = rmsd
+                    self.interface.dataframe.at[idx,
+                            '{}_length'] = alignment_length
+                    if rmsd < 3.0:
+                        if not os.path.exists(formatted_outdir):
+                            os.mkdir(formatted_outdir)
+                        if not os.path.exists(os.path.join(formatted_outdir,
+                            'combined')):
+                            os.mkdir(os.path.join(formatted_outdir,
+                                'combined'))
+                        pymol.cmd.center('reference')
+                        name = '{}_{}_length_{}_rmsd_{:.2f}'.format(self.pdbid,
+                                i, alignment_length, rmsd)
+                        pymol.cmd.save(os.path.join(formatted_outdir,
+                            name + '.pse'))
+                        pymol.cmd.create('combined', 'reference or ('
+                                + self.pdbid + ' and not chain ' +
+                                query_chain + ')')
+                        pymol.cmd.save(os.path.join(formatted_outdir,
+                                    'combined', name + '.pdb'),
+                                    'combined')
+                        pymol.cmd.delete('combined')
+                    if rmsd < best_rmsd:
+                        best_rmsd = rmsd
+                        best_i = i
                 except:
                     print('could not align {} with {}'.format(query_interface, reference_interface))
 
@@ -517,7 +473,7 @@ if __name__=='__main__':
     #align_interfaces(interface, reference_interfaces, pdbid,
     #    reference_pdb)
     
-    aligner='align'
+    aligner='cealign'
     interface_aligner = PyMOLAligner(aligner, interface, pdbid,
             reference_pdb,
             output_dir=os.path.join('outputs','Q969X5'))

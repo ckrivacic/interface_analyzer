@@ -48,7 +48,11 @@ if __name__=='__main__':
                     'outputs', uniprot_id, '{}_{}'.format(pdbid,
                         aligner), 'patches.pkl'
                     )
-            if not os.path.exists(pickle_path):
+            if os.path.exists(pickle_path):
+                cached_df = pd.read_pickle(pickle_path)
+                done = '{}_rmsd' in cached_df.columns
+                df = df.append(cached_df, ignore_index=True)
+            if not os.path.exists(pickle_path) or not done:
                 f.write(pdbid + '\n')
                 print('Running alignments on {}'.format(pdbid))
                 pymol.cmd.reinitialize()
@@ -68,10 +72,6 @@ if __name__=='__main__':
                 del interface_aligner
             
             else:
-                cached_df = pd.read_pickle(pickle_path)
-                print(cached_df)
-                df = df.append(cached_df, ignore_index=True)
-                print(df)
 
         f.close()
     df.to_pickle(os.path.join('outputs', uniprot_id, 'dataframe.pkl'))
