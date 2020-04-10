@@ -1,6 +1,7 @@
 from pyrosetta.rosetta.core.select import residue_selector
 import sys
 import pandas as pd
+import numpy as np
 from pyrosetta import *
 from utils import *
 from numeric import *
@@ -66,9 +67,9 @@ class Patches(object):
             if res1 not in resmap:
                 resmap[res1] = {}
             for res2 in self.reslist:
-                if res2 in resmap: # Don't calculate twice
-                    if res1 in resmap[res2]:
-                        resmap[res1][res2] = resmap[res2][res1]
+                # Don't calculate twice
+                if res2 in resmap and res1 in resmap[res2]: 
+                    resmap[res1][res2] = resmap[res2][res1]
                 else:
                     xyz1 = self.pose.residue(res1).xyz('CA')
                     xyz2 = self.pose.residue(res2).xyz('CA')
@@ -81,7 +82,7 @@ class Patches(object):
             self.resmap = None
 
     def nearest_n_residues(self, resnum, n, cutoff=30.0):
-        if not self.resmap.empty:
+        if np.any(self.resmap) and not self.resmap.empty:
             neighbors = self.resmap[(self.resmap['res1']==resnum) &
                     (self.resmap['dist'] <
                         cutoff)].sort_values(by='dist')['res2']

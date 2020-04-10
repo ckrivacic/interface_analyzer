@@ -55,6 +55,7 @@ class PyInterface():
         scorefxn(self.pose)
         self.cutoff_ = 8.0
         self.patch_residues = 8
+        self.patch_min_residues = 4
         self.patch_cutoff = 30
         self.interfaces = []
         self.pdb_interfaces = []
@@ -162,7 +163,7 @@ class PyInterface():
             for resi in sideA:
                 patch = patches.nearest_n_residues(resi,
                         self.patch_residues, cutoff=self.patch_cutoff)
-                if patch:
+                if patch and len(patch) > self.patch_min_residues:
 
                     # Get "partner patch"
                     interacting_residues = []
@@ -210,7 +211,7 @@ class PyInterface():
                 patch = patches.nearest_n_residues(resi,
                         self.patch_residues, cutoff=self.patch_cutoff)
 
-                if patch:
+                if patch and len(patch) > self.patch_min_residues:
 
                     # Get "partner patch"
                     interacting_residues = []
@@ -340,12 +341,16 @@ class PyMOLAligner(object):
                             'combined')):
                             os.mkdir(os.path.join(formatted_outdir,
                                 'combined'))
-                        pymol.cmd.center('reference')
+                        #pymol.cmd.center('reference')
                         name = '{}_{}_length_{}_rmsd_{:.2f}'.format(self.pdbid,
                                 i, alignment['alignment_length'],
                                 alignment['RMSD'])
+                        '''
+                        Don't really need this anymore with
+                        view_interface.py
                         pymol.cmd.save(os.path.join(formatted_outdir,
                             name + '.pse'))
+                        '''
                         pymol.cmd.create('combined', 'reference or ('
                                 + self.pdbid + ' and not chain ' +
                                 query_chain + ')')
@@ -371,12 +376,16 @@ class PyMOLAligner(object):
                             'combined')):
                             os.mkdir(os.path.join(formatted_outdir,
                                 'combined'))
-                        pymol.cmd.center('reference')
+                        #pymol.cmd.center('reference')
                         name = '{}_{}_length_{}_rmsd_{:.2f}'.format(self.pdbid,
                                 i, alignment[1],
                                 alignment[0])
+                        '''
+                        Don't really need this anymore with
+                        view_interface.py
                         pymol.cmd.save(os.path.join(formatted_outdir,
                             name + '.pse'))
+                        '''
                         pymol.cmd.create('combined', 'reference or ('
                                 + self.pdbid + ' and not chain ' +
                                 query_chain + ')')

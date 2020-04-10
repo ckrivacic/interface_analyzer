@@ -1,3 +1,6 @@
 wget
 pyrosetta
 pymol
+matplotlib
+numpy
+pandas
