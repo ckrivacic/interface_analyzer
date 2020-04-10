@@ -22,6 +22,28 @@ import pymol
 from reference_interface_definition import *
 
 
+def empty_interface_dataframe():
+    dataframe = pd.DataFrame(
+            columns=[
+                'pymol_chain',
+                'rosetta_chain',
+                'pymol_tarchain',
+                'rosetta_tarchain',
+                'rosetta_full_interface',
+                'rosetta_target_interface',
+                'pymol_full_interface',
+                'pymol_target_interface',
+                'rosetta_patch',
+                'pymol_patch',
+                'rosetta_target_patch',
+                'pymol_target_patch',
+                'pymol_reference_interface',
+                'rosetta_reference_interface'
+                ]
+            )
+    return dataframe
+
+
 class PyInterface():
     '''
     Class to handle interface definitions.
@@ -37,7 +59,7 @@ class PyInterface():
         self.interfaces = []
         self.pdb_interfaces = []
         self.reference_interfaces = []
-        self.dataframe = None
+        self.dataframe = empty_interface_dataframe()
 
     @property
     def cutoff(self):
@@ -112,7 +134,7 @@ class PyInterface():
         '''
         Build dataframe of patches for all interfaces
         '''
-        df_list = []
+        #df_list = []
         for interface in self.interfaces:
             # Get PDB info from interface
             pair_list = vector1_to_python_list(interface.pair_list())
@@ -120,11 +142,13 @@ class PyInterface():
             sideA_pymol = reslist_to_pdb_numbers(sideA, self.pose)
             sideB = vector1_to_python_list(pair_list[1])
             sideB_pymol = reslist_to_pdb_numbers(sideB, self.pose)
+            print('SIDEA',sideA)
+            print('SIDEB',sideB)
 
-            chainA = pose.pdb_info().pose2pdb(sideA[0]).split(' ')[1]
-            rosetta_chainA = pose.chain(sideA[0])
-            chainB = pose.pdb_info().pose2pdb(sideB[0]).split(' ')[1]
-            rosetta_chainB = pose.chain(sideB[0])
+            chainA = self.pose.pdb_info().pose2pdb(sideA[0]).split(' ')[1]
+            rosetta_chainA = self.pose.chain(sideA[0])
+            chainB = self.pose.pdb_info().pose2pdb(sideB[0]).split(' ')[1]
+            rosetta_chainB = self.pose.chain(sideB[0])
 
             # Get patches for side A
             patches = Patches(self.pose)
@@ -138,39 +162,39 @@ class PyInterface():
             for resi in sideA:
                 patch = patches.nearest_n_residues(resi,
                         self.patch_residues, cutoff=self.patch_cutoff)
+                if patch:
 
-                # Get "partner patch"
-                interacting_residues = []
-                for resi in patch:
-                    partners = vector1_to_python_list(vector1_to_python_list(
-                            interface.contact_list())[resi - 1])
-                    interacting_residues += partners
-                # No need to add a patch twice
-                if not any(d['rosetta_patch'] == patch for d in
-                        df_list):
-                    for reslist in self.reference_interfaces:
-                        row = {
-                                'pymol_chain': chainA,
-                                'rosetta_chain': rosetta_chainA,
-                                'pymol_tarchain': chainB,
-                                'rosetta_tarchain': rosetta_chainB,
-                                'rosetta_full_interface': sideA,
-                                'rosetta_target_interface': sideB,
-                                'pymol_full_interface': sideA_pymol,
-                                'pymol_target_interface': sideB_pymol,
-                                'rosetta_patch': patch,
-                                'pymol_patch': reslist_to_pdb_numbers(patch,
-                                    self.pose),
-                                'rosetta_target_patch': interacting_residues,
-                                'pymol_target_patch': set(reslist_to_pdb_numbers(interacting_residues,
-                                    self.pose)),
-                                'pymol_reference_interface':
-                                int_list_to_pdb_numbers(reslist),
-                                'rosetta_reference_interface':
-                                rosetta_numbers_from_pdb(reslist,
-                                    self.reference_pose),
-                                }
-                        df_list.append(row)
+                    # Get "partner patch"
+                    interacting_residues = []
+                    for resi in patch:
+                        partners = vector1_to_python_list(vector1_to_python_list(
+                                interface.contact_list())[resi - 1])
+                        interacting_residues += partners
+                    # No need to add a patch twice
+                    if not patch in self.dataframe['rosetta_patch'].values:
+                        for reslist in self.reference_interfaces:
+                            row = {
+                                    'pymol_chain': chainA,
+                                    'rosetta_chain': rosetta_chainA,
+                                    'pymol_tarchain': chainB,
+                                    'rosetta_tarchain': rosetta_chainB,
+                                    'rosetta_full_interface': sideA,
+                                    'rosetta_target_interface': sideB,
+                                    'pymol_full_interface': sideA_pymol,
+                                    'pymol_target_interface': sideB_pymol,
+                                    'rosetta_patch': patch,
+                                    'pymol_patch': reslist_to_pdb_numbers(patch,
+                                        self.pose),
+                                    'rosetta_target_patch': interacting_residues,
+                                    'pymol_target_patch': set(reslist_to_pdb_numbers(interacting_residues,
+                                        self.pose)),
+                                    'pymol_reference_interface':
+                                    int_list_to_pdb_numbers(reslist),
+                                    'rosetta_reference_interface':
+                                    rosetta_numbers_from_pdb(reslist,
+                                        self.reference_pose),
+                                    }
+                            self.dataframe = self.dataframe.append(row, ignore_index=True)
 
             # Get patches for side B
             del patches
@@ -186,45 +210,46 @@ class PyInterface():
                 patch = patches.nearest_n_residues(resi,
                         self.patch_residues, cutoff=self.patch_cutoff)
 
-                # Get "partner patch"
-                interacting_residues = []
-                for resi in patch:
-                    partners = vector1_to_python_list(vector1_to_python_list(
-                            interface.contact_list())[resi - 1])
-                    interacting_residues += partners
-                # No need to add a patch twice
-                if not any(d['rosetta_patch'] == patch for d in
-                        df_list):
-                    for reslist in self.reference_interfaces:
-                        row = {
-                                'pymol_chain': chainB,
-                                'rosetta_chain': rosetta_chainB,
-                                'pymol_tarchain': chainA,
-                                'rosetta_tarchain': rosetta_chainA,
-                                'rosetta_full_interface': sideB,
-                                'rosetta_target_interface': sideA,
-                                'pymol_full_interface': sideB_pymol,
-                                'pymol_target_interface': sideA_pymol,
-                                'rosetta_patch': patch,
-                                'pymol_patch': reslist_to_pdb_numbers(patch,
-                                    self.pose),
-                                'rosetta_target_patch': interacting_residues,
-                                'pymol_target_patch': set(reslist_to_pdb_numbers(interacting_residues,
-                                    self.pose)),
-                                'pymol_reference_interface':
-                                int_list_to_pdb_numbers(reslist),
-                                'rosetta_reference_interface':
-                                rosetta_numbers_from_pdb(reslist,
-                                    self.reference_pose),
-                                }
-                        df_list.append(row)
-        self.dataframe = pd.DataFrame(df_list)
+                if patch:
+
+                    # Get "partner patch"
+                    interacting_residues = []
+                    for resi in patch:
+                        partners = vector1_to_python_list(vector1_to_python_list(
+                                interface.contact_list())[resi - 1])
+                        interacting_residues += partners
+                    # No need to add a patch twice
+                    if not patch in self.dataframe['rosetta_patch'].values:
+                        for reslist in self.reference_interfaces:
+                            row = {
+                                    'pymol_chain': chainB,
+                                    'rosetta_chain': rosetta_chainB,
+                                    'pymol_tarchain': chainA,
+                                    'rosetta_tarchain': rosetta_chainA,
+                                    'rosetta_full_interface': sideB,
+                                    'rosetta_target_interface': sideA,
+                                    'pymol_full_interface': sideB_pymol,
+                                    'pymol_target_interface': sideA_pymol,
+                                    'rosetta_patch': patch,
+                                    'pymol_patch': reslist_to_pdb_numbers(patch,
+                                        self.pose),
+                                    'rosetta_target_patch': interacting_residues,
+                                    'pymol_target_patch': set(reslist_to_pdb_numbers(interacting_residues,
+                                        self.pose)),
+                                    'pymol_reference_interface':
+                                    int_list_to_pdb_numbers(reslist),
+                                    'rosetta_reference_interface':
+                                    rosetta_numbers_from_pdb(reslist,
+                                        self.reference_pose),
+                                    }
+                            self.dataframe = self.dataframe.append(row, ignore_index=True)
+        #self.dataframe = pd.DataFrame(df_list)
 
 
 class PyMOLAligner(object):
     def __init__(self, aligner, interface,
             pdbid, reference_pdb, output_dir='.',
-            input_dir='test_inputs', window=3, cycles=5):
+            input_dir='test_inputs', window=3, cycles=0):
         # String, either 'cealign' or 'align'
         self.aligner=aligner
         # PyInterface object
@@ -289,7 +314,7 @@ class PyMOLAligner(object):
                 '{}_{}'.format(self.pdbid, self.aligner))
         # Leave option to align entire interface instead of patches
         # To do: add option to align reference interface by patches
-        for idx, row in interface.dataframe.iterrows():
+        for idx, row in self.interface.dataframe.iterrows():
             query_interface = row['pymol_patch']
             if len(query_interface) == 0:
                 # Nothing to be done, no interface
@@ -308,7 +333,7 @@ class PyMOLAligner(object):
                             alignment['RMSD']
                     self.interface.dataframe.at[idx,'cealign_len'] =\
                             alignment['alignment_length']
-                    if alignment['RMSD'] < 3.0:
+                    if 0.0 < alignment['RMSD'] < 3.0:
                         if not os.path.exists(formatted_outdir):
                             os.mkdir(formatted_outdir)
                         if not os.path.exists(os.path.join(formatted_outdir,
@@ -339,7 +364,7 @@ class PyMOLAligner(object):
                             alignment[0]
                     self.interface.dataframe.at[idx,'align_atoms'] =\
                             alignment[1]
-                    if alignment[0] < 3.0:
+                    if 0.0 < alignment[0] < 3.0:
                         if not os.path.exists(formatted_outdir):
                             os.mkdir(formatted_outdir)
                         if not os.path.exists(os.path.join(formatted_outdir,
@@ -371,10 +396,12 @@ class PyMOLAligner(object):
             i += 1
         print('Best alignment by RMSD: alignment {}'.format(best_i))
         num = 0
+        if not os.path.exists(formatted_outdir):
+            os.mkdir(formatted_outdir)
         df_file = os.path.join(formatted_outdir, 'patches.pkl')
         while os.path.exists(df_file):
             num += 1
-            df_file = os.path.join(self.formatted_outdir,
+            df_file = os.path.join(formatted_outdir,
                     'patches_{}.pkl'.format(num))
         print(df_file)
         self.interface.dataframe.to_pickle(df_file)

@@ -18,6 +18,7 @@ class Patches(object):
                     "using pose.split_by_chain(chain_num)")
         self.pose = pose
         self.reslist = None
+        self.pdb_reslist = None
 
     def set_reslist(self, reslist):
         '''
@@ -30,11 +31,29 @@ class Patches(object):
             self.reslist = res_selector_to_size_list(reslist)
         else:
             self.reslist = intlist_to_vector1_size(reslist) 
+        # Use PDB numbering so that we can split chains and still
+        # get the correct residues.
+        self.pdb_reslist = reslist_to_pdb_numbers(self.reslist,
+                self.pose)
+
     def determine_surface_residues(self):
+        """Restrict reslist to surface residues"""
+        # Use only the chain of the given reslist if possible
+        if self.reslist:
+            chain = self.pose.chain(self.reslist.front())
+            chain_pose = self.pose.split_by_chain(chain)
+        else:
+            chain_pose = self.pose
+
+
         surface_selector = residue_selector.LayerSelector()
         surface_selector.set_layers(False, False, True)
-        reslist =\
-                res_selector_to_size_list(surface_selector.apply(self.pose))
+        try:
+            reslist =\
+                    res_selector_to_size_list(surface_selector.apply(chain_pose))
+            reslist = correct_resnums(chain_pose, reslist, self.pose)
+        except:
+            reslist = []
         if self.reslist:
             # If a reslist is already defined, only  take surface
             # residues that are in that reslist
@@ -54,15 +73,21 @@ class Patches(object):
                     xyz1 = self.pose.residue(res1).xyz('CA')
                     xyz2 = self.pose.residue(res2).xyz('CA')
                     resmap[res1][res2] = euclidean_distance(xyz1, xyz2)
-        resmap = pd.DataFrame(resmap).fillna(0).unstack().reset_index()
-        resmap.columns = ['res1', 'res2', 'dist']
-        self.resmap = resmap
+        if len(resmap) > 0:
+            resmap = pd.DataFrame(resmap).fillna(0).unstack().reset_index()
+            resmap.columns = ['res1', 'res2', 'dist']
+            self.resmap = resmap
+        else:
+            self.resmap = None
 
     def nearest_n_residues(self, resnum, n, cutoff=30.0):
-        neighbors = self.resmap[(self.resmap['res1']==resnum) &
-                (self.resmap['dist'] <
-                    cutoff)].sort_values(by='dist')['res2']
-        return set(neighbors[0:n].tolist())
+        if not self.resmap.empty:
+            neighbors = self.resmap[(self.resmap['res1']==resnum) &
+                    (self.resmap['dist'] <
+                        cutoff)].sort_values(by='dist')['res2']
+            return set(neighbors[0:n].tolist())
+        else:
+            return None
 
 
 if __name__=='__main__':

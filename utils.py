@@ -81,3 +81,28 @@ def reslist_to_selstr(reslist, chain='A'):
         selection.append(selstr)
 
     return 'or'.join(selection)
+
+
+def correct_resnums(initial_pose, reslist, final_pose):
+    """Get rosetta numbering for final_pose from a reslist for the
+    intial_pose"""
+    corrected_residues = []
+    for res in reslist:
+        pdbnum = initial_pose.pdb_info().pose2pdb(res)
+        pdbres = int(pdbnum.split(' ')[0])
+        pdbchain = pdbnum.split(' ')[1]
+        rosettanum = final_pose.pdb_info().pdb2pose(pdbchain, pdbres)
+        corrected_residues.append(rosettanum)
+
+    return corrected_residues
+
+# Write a test for correct_resnums
+def test_correct_resnums():
+    pose = pose_from_file('test_inputs/3r7c.clean.pdb')
+    chain_pose = pose.split_by_chain(2)
+    reslist = [60]
+    correct_resnums(pose, reslist, pose)
+
+if __name__=='__main__':
+    init()
+    test_correct_resnums()
