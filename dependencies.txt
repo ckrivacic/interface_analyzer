@@ -4,3 +4,4 @@ pymol
 matplotlib
 numpy
 pandas
+prody
