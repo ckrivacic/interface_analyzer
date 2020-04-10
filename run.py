@@ -63,12 +63,15 @@ if __name__=='__main__':
                         reference_pdb,
                         output_dir=os.path.join('outputs',uniprot_id))
                 interface_aligner.align_patches()
-                df = interface_aligner.interface.dataframe
+                df = df.append(interface_aligner.interface.dataframe,
+                        ignore_index=True)
                 del interface_aligner
             
             else:
                 cached_df = pd.read_pickle(pickle_path)
-                df.append(cached_df, ignore_index=True)
+                print(cached_df)
+                df = df.append(cached_df, ignore_index=True)
+                print(df)
 
         f.close()
     df.to_pickle(os.path.join('outputs', uniprot_id, 'dataframe.pkl'))
