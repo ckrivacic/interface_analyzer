@@ -1,5 +1,9 @@
 '''
-Usage: scoring <dataframe>
+Usage: scoring.py <dataframe> [options]
+
+Options:
+    --aligner=STR  Which aligner to look at  [default: align]
+    --skip=PDBS  Skip these PDBs
 '''
 from pyrosetta import *
 import os, fnmatch, sys
@@ -32,7 +36,7 @@ def find_pdbs(directory, pattern='*.pdb'):
                 yield filename
 
 
-def score_pdbs(dataframe, aligner='align'):
+def score_pdbs(dataframe, aligner='align', skip=[]):
     """Score all pdbs in a 'patches' dataframe and update the dataframe."""
     sfxn = motif_scorefxn()
     for idx, row in tqdm.tqdm(dataframe.iterrows(), total=dataframe.shape[0]):
@@ -40,7 +44,12 @@ def score_pdbs(dataframe, aligner='align'):
         if pd.isnull(pdb_path):
             continue
         else:
+            breakcheck = False
+            if pdb_path.split('/')[-1].split('_')[0] in skip:
+                breakcheck = True
             pose = pose_from_file(pdb_path)
+        if breakcheck:
+            continue
         dataframe.at[idx, 'pose_score'] = sfxn(pose)
         interface_total = 0.0
         residue_dict = {}
@@ -128,15 +137,22 @@ def score_pdb(filename, interface=None, sfxn = None):
 
 if __name__=='__main__':
     args = docopt.docopt(__doc__)
+    print(args)
+    aligner = args['--aligner']
+    if args['--skip']:
+        skip = args['--skip'].split(',')
+    else:
+        skip = []
     input_dataframe = args['<dataframe>']
     init('-docking_low_res_score motif_dock_score \
 -mh:path:scores_BB_BB \
-/home/krivacic/rosetta/database/additional_protocol_data/motif_dock/xh_16_ \
+#/home/krivacic/rosetta/database/additional_protocol_data/motif_dock/xh_16_ \
+/home/kortemmelab/ckrivacic/rosetta/database/additional_protocol_data/motif_dock/xh_16_ \
 -mh:score:use_ss1 false \
 -mh:score:use_ss2 false \
 -mh:score:use_aa1 true \
 -mh:score:use_aa2 true')
     df = pd.read_pickle(input_dataframe)
-    score_pdbs(df)
+    score_pdbs(df, aligner=aligner, skip=skip)
     df.to_pickle('test_pickle.pkl')
     df.to_csv('test_csv.csv')
