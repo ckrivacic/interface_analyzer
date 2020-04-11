@@ -13,17 +13,21 @@ import docopt
 import tqdm
 
 
-def motif_scorefxn():
+def motif_scorefxn(vdw_weight=1.0):
     '''
     Returns sforefunction with just motif_dock enabled
     '''
     sfxn = ScoreFunction()
+    #sfxn = create_score_function('motif_dock_score')
+    
     score_manager = rosetta.core.scoring.ScoreTypeManager()
     motif_term = score_manager.score_type_from_name('motif_dock')
     sfxn.set_weight(motif_term, 1)
-    vdw_term = score_manager.score_type_from_name('interchain_vdw')
+    #vdw_term = score_manager.score_type_from_name('interchain_vdw')
+    vdw_term = score_manager.score_type_from_name('vdw')
     #vdw_term = score_manager.score_type_from_name('fa_rep')
-    sfxn.set_weight(vdw_term, 1)
+    sfxn.set_weight(vdw_term, vdw_weight)
+    
     return sfxn
 
 
@@ -48,6 +52,8 @@ def score_pdbs(dataframe, aligner='align', skip=[]):
             if pdb_path.split('/')[-1].split('_')[0] in skip:
                 breakcheck = True
             pose = pose_from_file(pdb_path)
+            switch = SwitchResidueTypeSetMover("centroid")
+            switch.apply(pose)
         if breakcheck:
             continue
         dataframe.at[idx, 'pose_score'] = sfxn(pose)
@@ -135,6 +141,80 @@ def score_pdb(filename, interface=None, sfxn = None):
 
     return row_dict
 
+
+def score_row(dataframe, idx, aligner='align'):
+    """Score a single pdb. Not used atm."""
+    sfxn = motif_scorefxn(vdw_weight=2.0)
+    row = dataframe.iloc[idx]
+    interface_total = 0.0
+    pdb_path = row['{}_combined_pdb_path'.format(aligner)]
+    pose = pose_from_file(pdb_path)
+    switch = SwitchResidueTypeSetMover("centroid")
+    switch.apply(pose)
+    dataframe.at[idx, 'pose_score'] = sfxn(pose)
+    interface_total = 0.0
+    residue_dict = {}
+    for residue in row['pymol_target_interface']:
+        resnum = int(residue.split(' ')[0])
+        chain = residue.split(' ')[1]
+        rosettanum = pose.pdb_info().pdb2pose(chain, resnum)
+        #print(rosettanum)
+        if rosettanum != 0:
+            residue_energy =\
+                    pose.energies().residue_total_energy(rosettanum)
+            interface_total += residue_energy
+            residue_dict[rosettanum] = residue_energy
+    
+    '''
+    Patches are on the REPLACED chain so commenting this out
+    as that chain is not in this pdb file.
+    Should be looking at reference_total instead, which will be more
+    useful if reference interfaces are defined as patches instead of
+    whole interfaces.
+    patch_total = 0
+    for residue in row['rosetta_patch']:
+        residue_energy =\
+                pose.energies().residue_total_energy(residue)
+        patch_total += residue_energy
+        residue_dict[residue] = residue_energy
+    '''
+    # Get total for residues in the interacting patch
+    interacting_residues_total = 0
+    for residue in row['pymol_target_patch']:
+        resnum = int(residue.split(' ')[0])
+        chain = residue.split(' ')[1]
+        rosettanum = pose.pdb_info().pdb2pose(chain, resnum)
+        if rosettanum != 0:
+            print(pose.energies().residue_total_energies(rosettanum))
+            residue_energy =\
+                    pose.energies().residue_total_energy(rosettanum)
+            interacting_residues_total += residue_energy
+            residue_dict[rosettanum] = residue_energy
+
+
+    # Total energy for residues in reference chain
+    reference_total = 0
+    for residue in row['pymol_reference_interface']:
+        resnum = int(residue.split(' ')[0])
+        rosettanum = pose.pdb_info().pdb2pose('Z', resnum)
+        if rosettanum != 0:
+            residue_energy =\
+                    pose.energies().residue_total_energy(rosettanum)
+            reference_total += residue_energy
+            residue_dict[rosettanum] = residue_energy
+    
+
+    # Wrap dict in list so that pandas will accept it
+    dataframe.at[idx, '{}_residue_scores'.format(aligner)] = [residue_dict]
+    # Save total scores
+    #dataframe.at[idx, '{}_patch_score'.format(aligner)] = patch_total
+    dataframe.at[idx, '{}_interface_score'.format(aligner)] = interface_total
+    dataframe.at[idx, '{}_reference_score'.format(aligner)] = reference_total
+    dataframe.at[idx, '{}_target_patch_score'.format(aligner)] =\
+            interacting_residues_total
+
+    print(dataframe)
+
 if __name__=='__main__':
     args = docopt.docopt(__doc__)
     print(args)
@@ -145,14 +225,15 @@ if __name__=='__main__':
         skip = []
     input_dataframe = args['<dataframe>']
     init('-docking_low_res_score motif_dock_score \
--mh:path:scores_BB_BB \
-#/home/krivacic/rosetta/database/additional_protocol_data/motif_dock/xh_16_ \
-/home/kortemmelab/ckrivacic/rosetta/database/additional_protocol_data/motif_dock/xh_16_ \
+-mh:path:scores_BB_BB ' + \
+os.environ['HOME'] + '/rosetta/database/additional_protocol_data/motif_dock/xh_16_ \
 -mh:score:use_ss1 false \
 -mh:score:use_ss2 false \
 -mh:score:use_aa1 true \
 -mh:score:use_aa2 true')
     df = pd.read_pickle(input_dataframe)
-    score_pdbs(df, aligner=aligner, skip=skip)
+    #score_pdbs(df, aligner=aligner, skip=skip)
+    #score_pdbs(df)
+    score_row(df, 6962)
     df.to_pickle('test_pickle.pkl')
     df.to_csv('test_csv.csv')
