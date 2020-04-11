@@ -28,7 +28,6 @@ def make_pymol_session(df, idx, out='temp.pse', aligner='align'):
         resnum = pdb_res[0]
         chain = pdb_res[1]
         color = get_color(residue_scores[residue], minval, maxval)
-        print(residue_scores[residue])
         pymol.cmd.show('lines', 'resi {} and chain {}'.format(resnum,
             chain))
         pymol.cmd.color(color, 'chain {} and resi {} and name c*'.format(chain, resnum))
