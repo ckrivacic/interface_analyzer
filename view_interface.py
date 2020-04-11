@@ -17,8 +17,10 @@ def make_pymol_session(df, idx, out='temp.pse', aligner='align'):
     pymol.util.cbaw('chain Z')
 
     residue_scores = row['{}_residue_scores'.format(aligner)][0]
-    minval = min(residue_scores.values())
-    maxval = max(residue_scores.values())
+    #minval = min(residue_scores.values())
+    minval = -10.0
+    #maxval = max(residue_scores.values())
+    maxval = 10.0
 
     # Color all scored residues
     for residue in residue_scores:
@@ -26,6 +28,7 @@ def make_pymol_session(df, idx, out='temp.pse', aligner='align'):
         resnum = pdb_res[0]
         chain = pdb_res[1]
         color = get_color(residue_scores[residue], minval, maxval)
+        print(residue_scores[residue])
         pymol.cmd.show('lines', 'resi {} and chain {}'.format(resnum,
             chain))
         pymol.cmd.color(color, 'chain {} and resi {} and name c*'.format(chain, resnum))
@@ -59,4 +62,5 @@ def get_color(value, minval, maxval):
 if __name__=='__main__':
     init()
     df = pd.read_pickle('test_pickle.pkl')
-    make_pymol_session(df, 94)
+    make_pymol_session(df, int(sys.argv[1]))
+    os.system('pymol temp.pse')
