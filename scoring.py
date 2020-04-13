@@ -4,6 +4,7 @@ Usage: scoring.py <dataframe> [options]
 Options:
     --aligner=STR  Which aligner to look at  [default: align]
     --skip=PDBS  Skip these PDBs
+    --csv_out=STR  Save a csv file of the dataframe
 '''
 from pyrosetta import *
 import os, fnmatch, sys
@@ -40,9 +41,10 @@ def find_pdbs(directory, pattern='*.pdb'):
                 yield filename
 
 
-def score_pdbs(dataframe, aligner='align', skip=[]):
+def score_pdbs(dataframe, aligner='align', skip=[], out='test_out.pkl'):
     """Score all pdbs in a 'patches' dataframe and update the dataframe."""
     sfxn = motif_scorefxn()
+    save_check = 0
     for idx, row in tqdm.tqdm(dataframe.iterrows(), total=dataframe.shape[0]):
         pdb_path = row['{}_combined_pdb_path'.format(aligner)]
         if pd.isnull(pdb_path):
@@ -56,6 +58,7 @@ def score_pdbs(dataframe, aligner='align', skip=[]):
             switch.apply(pose)
         if breakcheck:
             continue
+        save_check += 1
         dataframe.at[idx, 'pose_score'] = sfxn(pose)
         interface_total = 0.0
         residue_dict = {}
@@ -116,6 +119,9 @@ def score_pdbs(dataframe, aligner='align', skip=[]):
         dataframe.at[idx, '{}_reference_score'.format(aligner)] = reference_total
         dataframe.at[idx, '{}_target_patch_score'.format(aligner)] =\
                 interacting_residues_total
+        if save_check == 100:
+            dataframe.to_pickle(out)
+            save_check = 0
 
     print(dataframe)
 
@@ -232,8 +238,9 @@ os.environ['HOME'] + '/rosetta/database/additional_protocol_data/motif_dock/xh_1
 -mh:score:use_aa1 true \
 -mh:score:use_aa2 true')
     df = pd.read_pickle(input_dataframe)
-    #score_pdbs(df, aligner=aligner, skip=skip)
+    score_pdbs(df, aligner=aligner, skip=skip)
     #score_pdbs(df)
-    score_row(df, 6962)
-    df.to_pickle('test_pickle.pkl')
-    df.to_csv('test_csv.csv')
+    #score_row(df, 6962)
+    df.to_pickle(input_dataframe)
+    if args['--csv_out']:
+        df.to_csv(args['--csv_out'])

@@ -44,6 +44,7 @@ if __name__=='__main__':
         pdbs = blast.getHits(percent_identity=69)
         f = open('{}_pdbs.txt'.format(sys.argv[1]), 'a')
         for pdbid in pdbs:
+            cached_df = empty_interface_dataframe()
             pickle_path = os.path.join(
                     'outputs', uniprot_id, '{}_{}'.format(pdbid,
                         aligner), 'patches.pkl'
@@ -51,7 +52,7 @@ if __name__=='__main__':
             if os.path.exists(pickle_path):
                 cached_df = pd.read_pickle(pickle_path)
                 done = '{}_rmsd' in cached_df.columns
-                df = df.append(cached_df, ignore_index=True)
+                #df = df.append(cached_df, ignore_index=True)
             if not os.path.exists(pickle_path) or not done:
                 f.write(pdbid + '\n')
                 print('Running alignments on {}'.format(pdbid))
@@ -60,8 +61,9 @@ if __name__=='__main__':
                 interfaces = PyInterface(pose, reference_pose)
                 interfaces.find_interface()
                 interfaces.set_reference_interfaces(reference_interfaces)
-                interfaces.set_dataframe(df)
+                interfaces.set_dataframe(cached_df)
                 interfaces.find_patches()
+                print(interfaces.dataframe)
 
                 interface_aligner = PyMOLAligner(aligner, interfaces, pdbid,
                         reference_pdb,
@@ -70,9 +72,9 @@ if __name__=='__main__':
                 df = df.append(interface_aligner.interface.dataframe,
                         ignore_index=True)
                 del interface_aligner
-            
-            else:
 
         f.close()
-    df.to_pickle(os.path.join('outputs', uniprot_id, 'dataframe.pkl'))
-    df.to_csv(os.path.join('outputs', uniprot_id, 'dataframe.csv'))
+    df.to_pickle(os.path.join('outputs', uniprot_id,
+        'dataframe_{}.pkl'.format(aligner)))
+    df.to_csv(os.path.join('outputs', uniprot_id,
+        'dataframe_{}.csv'.format(aligner)))

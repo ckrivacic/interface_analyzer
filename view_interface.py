@@ -13,8 +13,8 @@ def make_pymol_session(df, idx, out='temp.pse', aligner='align'):
     pdbinfo = pose_from_file(pdb_path).pdb_info()
     #pymol.finish_launching(['pymol', '-qc'])
     pymol.cmd.load(pdb_path, 'combined')
-    pymol.util.cbc()
-    pymol.util.cbaw('chain Z')
+    #pymol.util.cbc()
+    pymol.util.cbao('chain Z')
 
     residue_scores = row['{}_residue_scores'.format(aligner)][0]
     #minval = min(residue_scores.values())
@@ -60,6 +60,6 @@ def get_color(value, minval, maxval):
 
 if __name__=='__main__':
     init()
-    df = pd.read_pickle('test_pickle.pkl')
-    make_pymol_session(df, int(sys.argv[1]))
+    df = pd.read_pickle(sys.argv[1])
+    make_pymol_session(df, int(sys.argv[2]))
     os.system('pymol temp.pse')

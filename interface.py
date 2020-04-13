@@ -364,7 +364,7 @@ class PyMOLAligner(object):
                     pymol.cmd.save(os.path.join(formatted_outdir,
                                 'combined', name + '.pdb'),
                                 'combined')
-                    self.interface.dataframe.at[idx,'cealign_combined_pdb_path']=\
+                    self.interface.dataframe.at[idx,'{}_combined_pdb_path'.format(self.aligner)]=\
                             os.path.join(formatted_outdir, 'combined',
                             name + '.pdb')
                     pymol.cmd.delete('combined')
