@@ -4,6 +4,7 @@ Usage: run <UniProt> [options]
 Options:
     --aligner=STR  Run cealign instead of default align in PyMOL.
     [default: align]
+    --percent_id=NUM  What percentage identity for query proteins  [default: 70]
 """
 from blast import *
 from interface import *
@@ -14,6 +15,7 @@ import docopt
 
 if __name__=='__main__':
     args = docopt.docopt(__doc__)
+    percent_id = int(args['--percent_id'])
     aligner = args['--aligner']
     uniprot_id = args['<UniProt>']
     init()
@@ -41,7 +43,7 @@ if __name__=='__main__':
     reference_pose = pose_from_file(reference_pdb)
     df = empty_interface_dataframe()
     for blast in blasts: # Generally should only be 1 blast record
-        pdbs = blast.getHits(percent_identity=69)
+        pdbs = blast.getHits(percent_identity=percent_id)
         f = open('{}_pdbs.txt'.format(sys.argv[1]), 'a')
         for pdbid in pdbs:
             cached_df = empty_interface_dataframe()

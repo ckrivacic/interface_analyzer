@@ -1,3 +1,10 @@
+'''
+Usage: view_interface.py <dataframe> <row> [options]
+
+Options:
+    --aligner=STR  Which aligner to look at  [default: align]
+'''
+
 import pandas as pd
 import pymol, sys
 import matplotlib.cm
@@ -59,7 +66,10 @@ def get_color(value, minval, maxval):
 
 
 if __name__=='__main__':
+    import docopt
+
+    args = docopt.docopt(__doc__)
     init()
-    df = pd.read_pickle(sys.argv[1])
-    make_pymol_session(df, int(sys.argv[2]))
+    df = pd.read_pickle(args['<dataframe>'])
+    make_pymol_session(df, int(args['<row>']), aligner=args['--aligner'])
     os.system('pymol temp.pse')
