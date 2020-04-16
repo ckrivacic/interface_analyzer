@@ -58,8 +58,17 @@ def make_pymol_session(df, idx, out='temp.pse', aligner='align'):
 
 
 
-def get_color(value, minval, maxval):
+def get_color(value, minval, maxval, make_colorbar=True):
     cmap = matplotlib.cm.get_cmap('coolwarm')
+    if make_colorbar:
+        import matplotlib.pyplot as plt
+        fig, ax = plt.subplots(figsize=(6, 1))
+        fig.subplots_adjust(bottom=0.5)
+        norm = matplotlib.colors(Normalize(vmin=-5, vmax=5))
+        cb1 = matplotlib.colorbar.ColorbarBase(ax, cmap=cmap, norm=norm,
+                orientation='horizontal')
+        cb1.set_label('Per-residue REU')
+        fig.show()
     fraction = (value - minval) / (maxval - minval)
     rgba = cmap(fraction)
     return '0x' + matplotlib.colors.to_hex(rgba)[1:]
