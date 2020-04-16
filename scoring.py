@@ -237,6 +237,12 @@ os.environ['HOME'] + '/rosetta/database/additional_protocol_data/motif_dock/xh_1
 -mh:score:use_ss2 false \
 -mh:score:use_aa1 true \
 -mh:score:use_aa2 true')
+    '''
+    if args['--temp']:
+        row = df.loc[156]
+        row['align_combined_pdb_path'] =
+                row['align_combined_pdb_path'[:-4] + '_0001.pdb']
+    '''
     df = pd.read_pickle(input_dataframe)
     score_pdbs(df, aligner=aligner, skip=skip)
     #score_pdbs(df)

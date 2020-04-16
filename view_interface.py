@@ -25,9 +25,9 @@ def make_pymol_session(df, idx, out='temp.pse', aligner='align'):
 
     residue_scores = row['{}_residue_scores'.format(aligner)][0]
     #minval = min(residue_scores.values())
-    minval = -10.0
+    minval = -5.0
     #maxval = max(residue_scores.values())
-    maxval = 10.0
+    maxval = 5.0
 
     # Color all scored residues
     for residue in residue_scores:
