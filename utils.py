@@ -3,6 +3,15 @@ from pyrosetta.rosetta.core.select import residue_selector
 from numeric import intlist_to_vector1_size
 import os, wget
 
+def three_to_one(restype):
+    three_to_one = {
+            'ala':'a', 'arg':'r', 'asn':'n', 'asp':'d', 'cys':'c',
+            'glu':'e', 'gln':'q', 'gly':'g', 'his':'h', 'ile':'i',
+            'leu':'l', 'lys':'k', 'met':'m', 'phe':'f', 'pro':'p',
+            'ser':'s', 'thr':'t', 'trp':'w', 'tyr':'y', 'val':'v'
+            }
+
+    return three_to_one[restype.lower()].upper()
 
 def pose_from_rcsb(pdbid, prefix=None):
     if prefix:

@@ -20,6 +20,7 @@ import sys, os
 #sys.path.insert(1,'/home/krivacic/software/pymol/lib/python3.7')
 import pymol
 from reference_interface_definition import *
+from Bio.SubsMat.MatrixInfo import blosum62
 
 
 def empty_interface_dataframe():
@@ -278,6 +279,44 @@ class PyMOLAligner(object):
         # MONOMER REFERENCE STRUCTURES)
         pymol.cmd.alter('reference', "chain='Z'")
 
+    def score_alignment(self, reference_reslist, query_reslist,
+            cutoff=2.0):
+        distances = []
+        for ref_res in reference_reslist:
+            ref_res_selstr = "reference and name CA and resi {} and chain Z".format(ref_res.split(' ')[0])
+            pymol.cmd.iterate(ref_res_selstr,
+                    'stored.rres = resn')
+            for query_res in query_reslist:
+                query_res_selstr = "{} and name CA and resi {} and chain "\
+                        "{}".format(self.pdbid, query_res.split(' ')[0],
+                                query_res.split(' ')[1])
+                pymol.cmd.iterate(query_res_selstr, 'stored.qres = resn')
+                dist = pymol.cmd.get_distance(ref_res_selstr,
+                        query_res_selstr)
+                distances.append({'ref_res': ref_res,
+                'ref_restype': three_to_one(pymol.stored.rres), 'query_res':
+                    query_res, 'query_restype':
+                    three_to_one(pymol.stored.qres), 'distance': dist})
+        distances = pd.DataFrame(distances)
+        
+        score = 0
+        close_residues = 0
+        for query_res in query_reslist:
+            nearest_row = distances[distances['query_res']==query_res]\
+                    .sort_values(by='distance').iloc[0]
+            if nearest_row['distance'] < cutoff:
+                close_residues += 1
+                pair = (nearest_row['query_restype'],
+                        nearest_row['ref_restype'])
+                if pair in blosum62:
+                    score += blosum62[pair]
+                else:
+                    score += blosum62[(pair[1], pair[0])]
+            else:
+                score += -1
+
+        return score, close_residues
+
     def align(self, reference_reslist, query_reslist):
         '''
         Align a reference patch with a query patch using the defined
@@ -329,19 +368,27 @@ class PyMOLAligner(object):
             try:
                 alignment = self.align(reference_interface,
                         query_interface)
-                print(i)
+                #print(i)
                 print(alignment)
                 if self.aligner=='cealign':
                     rmsd = alignment['RMSD']
                     alignment_length = alignment['alignment_length']
                 elif self.aligner=='align':
                     rmsd = alignment[0]
-                    alignment_length = alignment[1]
+                    #alignment_length = alignment[1]
+                alignment_score, alignment_length = \
+                        self.score_alignment(reference_interface, query_interface)
+
+                self.interface.dataframe.at[idx,
+                        '{}_alignment_score'.format(self.aligner)] = alignment_score
+                self.interface.dataframe.at[idx,
+                        '{}_length'.format(self.aligner)] = alignment_length
+
                 self.interface.dataframe.at[idx,'{}_rmsd'.format(self.aligner)] =\
                         rmsd
-                self.interface.dataframe.at[idx,'{}_length'.format(self.aligner)] =\
-                        alignment_length
-                if 0.0 < rmsd < 3.0:
+                #self.interface.dataframe.at[idx,'{}_length'.format(self.aligner)] =\
+                        #alignment_length
+                if 0.0 < rmsd < 2.0 and alignment_length > 3:
                     if not os.path.exists(formatted_outdir):
                         os.mkdir(formatted_outdir)
                     if not os.path.exists(os.path.join(formatted_outdir,
@@ -473,7 +520,7 @@ if __name__=='__main__':
     #align_interfaces(interface, reference_interfaces, pdbid,
     #    reference_pdb)
     
-    aligner='cealign'
+    aligner='align'
     interface_aligner = PyMOLAligner(aligner, interface, pdbid,
             reference_pdb,
             output_dir=os.path.join('outputs','Q969X5'))

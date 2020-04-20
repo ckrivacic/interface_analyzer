@@ -17,6 +17,7 @@ def make_pymol_session(df, idx, out='temp.pse', aligner='align'):
     row = df.iloc[idx]
 
     pdb_path = row['{}_combined_pdb_path'.format(aligner)]
+    #pdb_path = 'outputs/P55789/3r7c_align/combined/3r7c_48_length_13_rmsd_1.95_0001.pdb'
     pdbinfo = pose_from_file(pdb_path).pdb_info()
     #pymol.finish_launching(['pymol', '-qc'])
     pymol.cmd.load(pdb_path, 'combined')
@@ -30,11 +31,13 @@ def make_pymol_session(df, idx, out='temp.pse', aligner='align'):
     maxval = 5.0
 
     # Color all scored residues
+    make_colorbar = False
     for residue in residue_scores:
         pdb_res = pdbinfo.pose2pdb(int(residue)).split(' ')
         resnum = pdb_res[0]
         chain = pdb_res[1]
-        color = get_color(residue_scores[residue], minval, maxval)
+        color = get_color(residue_scores[residue], minval, maxval,
+                make_colorbar=make_colorbar)
         pymol.cmd.show('lines', 'resi {} and chain {}'.format(resnum,
             chain))
         pymol.cmd.color(color, 'chain {} and resi {} and name c*'.format(chain, resnum))
@@ -58,17 +61,18 @@ def make_pymol_session(df, idx, out='temp.pse', aligner='align'):
 
 
 
-def get_color(value, minval, maxval, make_colorbar=True):
+def get_color(value, minval, maxval, make_colorbar=False):
     cmap = matplotlib.cm.get_cmap('coolwarm')
     if make_colorbar:
         import matplotlib.pyplot as plt
         fig, ax = plt.subplots(figsize=(6, 1))
         fig.subplots_adjust(bottom=0.5)
-        norm = matplotlib.colors(Normalize(vmin=-5, vmax=5))
+        norm = matplotlib.colors.Normalize(vmin=minval, vmax=maxval)
         cb1 = matplotlib.colorbar.ColorbarBase(ax, cmap=cmap, norm=norm,
                 orientation='horizontal')
         cb1.set_label('Per-residue REU')
         fig.show()
+        plt.show()
     fraction = (value - minval) / (maxval - minval)
     rgba = cmap(fraction)
     return '0x' + matplotlib.colors.to_hex(rgba)[1:]
