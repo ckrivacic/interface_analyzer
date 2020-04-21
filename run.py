@@ -22,7 +22,17 @@ if __name__=='__main__':
     pymol.finish_launching(['pymol','-qc'])
     #pdbid = sys.argv[1]
     #run_blast(pdbid)
-    seq = get_sequence(uniprot_id)
+    if not os.path.exists('seqs'):
+        os.mkdir('seqs')
+    seq_pickle = os.path.join('seqs', '{}.pkl'.format(uniprot_id))
+    if not os.path.exists(seq_pickle):
+        seq = get_sequence(uniprot_id)
+        with open(seq_pickle, 'wb') as f:
+            pkl.dump(seq, f)
+    else:
+        with open(seq_pickle, 'rb') as f:
+            seq = pkl.load(f)
+
     blasts = []
     for s in seq: # Generally should only be 1 seq
         if not os.path.exists('blasts'):

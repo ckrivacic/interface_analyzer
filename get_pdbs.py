@@ -24,11 +24,20 @@ if __name__=='__main__':
     datafile = '2020-03-18_Krogan_SARSCoV2_27baits.txt'
     df = pd.read_csv(datafile, sep='\t')
     preys = df['Preys']
+    if not os.path.exists('seqs'):
+        os.mkdir('seqs')
     if not os.path.exists('blasts'):
         os.mkdir('blasts')
     blasts = []
     for prey in preys:
-        seq = get_sequence(prey)
+        seq_pickle = os.path.join('seqs', '{}.pkl'.format(prey))
+        if not os.path.exists(seq_pickle):
+            seq = get_sequence(uniprot_id)
+            with open(seq_pickle, 'wb') as f:
+                pkl.dump(seq, f)
+        else:
+            with open(seq_pickle, 'rb') as f:
+                seq = pkl.load(f)
         for s in seq:
             pickle_path = os.path.join('blasts',
                     '{}_blast.pkl'.format(s.id))
