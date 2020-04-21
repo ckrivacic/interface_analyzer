@@ -42,10 +42,13 @@ if __name__=='__main__':
             pickle_path = os.path.join('blasts',
                     '{}_blast.pkl'.format(s.id))
             if not os.path.exists(pickle_path):
-                blast = run_blast(str(s.seq))
-                if blast:
-                    with open(pickle_path, 'wb') as f:
-                        pkl.dump(blast, f)
+                try:
+                    blast = run_blast(str(s.seq))
+                    if blast:
+                        with open(pickle_path, 'wb') as f:
+                            pkl.dump(blast, f)
+                except:
+                    continue
             else:
                 with open(pickle_path, 'rb') as f:
                     blast = pkl.load(f)
