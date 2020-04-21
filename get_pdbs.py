@@ -32,7 +32,7 @@ if __name__=='__main__':
     for prey in preys:
         seq_pickle = os.path.join('seqs', '{}.pkl'.format(prey))
         if not os.path.exists(seq_pickle):
-            seq = get_sequence(uniprot_id)
+            seq = get_sequence(prey)
             with open(seq_pickle, 'wb') as f:
                 pkl.dump(seq, f)
         else:
