@@ -36,6 +36,7 @@ if __name__=='__main__':
             with open(seq_pickle, 'wb') as f:
                 pkl.dump(seq, f)
         else:
+            print('opening existing seq file')
             with open(seq_pickle, 'rb') as f:
                 seq = pkl.load(f)
         for s in seq:
@@ -50,6 +51,7 @@ if __name__=='__main__':
                 except:
                     continue
             else:
+                'Opening existing BLAST file'
                 with open(pickle_path, 'rb') as f:
                     blast = pkl.load(f)
             
