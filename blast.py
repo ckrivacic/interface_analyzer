@@ -7,7 +7,7 @@ from io import StringIO
 
 def run_blast(sequence):
     #return blastPDB(sequence)
-    return blastPDB(sequence, timeout=240)
+    return blastPDB(sequence, sleep=11)
 
 
 def get_sequence(cID):
