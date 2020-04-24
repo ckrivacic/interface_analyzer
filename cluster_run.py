@@ -32,6 +32,13 @@ def load_blast(prey):
         blast = pkl.load(f)
         return blast
 
+def load_clean_pose(pdbid, prefix='prey_pdbs'):
+    path = os.path.join(prefix, pdbid + '.clean.pdb')
+    if not os.path.exists(path):
+        return None
+    else:
+        return rosetta.core.import_pose.get_pdb_and_cleanup(path)
+
 
 def parse_bait(row, prefix='SARS-CoV2 ', folder='virus_pdbs'):
     baitname = row['Bait']
@@ -81,7 +88,9 @@ if __name__=='__main__':
         if not os.path.exists(pickle_path) or not done:
             print('Running alignments on {}'.format(pdbid))
             pymol.cmd.reinitialize()
-            pose = pose_from_rcsb(pdbid, 'test_inputs')
+            pose = load_clean_pose(pdbid)
+            if pose is None:
+                continue
             interfaces = PyInterface(pose, reference_pose)
             interfaces.find_interface()
             interfaces.set_reference_interfaces(reference_interfaces)
