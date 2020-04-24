@@ -1,5 +1,5 @@
 """
-Usage: run [options]
+Usage: cluster_run.py [options]
 
 Options:
     --aligner=STR  Run cealign instead of default align in PyMOL.
@@ -13,6 +13,15 @@ from reference_interface_definition import *
 import pickle as pkl
 import docopt
 
+
+def finish_io(temp, final, prefix=''):
+    from shutil import copyfile
+    if not os.path.exists(final):
+        os.makedirs(final, exist_ok=True)
+    outfile = '{}_outputs'.format(prefix)
+    cmd = 'tar -czvf ' + os.path.join(temp, outfile) + ' --directory=' + temp + ' .'
+    copyfile os.path.join(os.path.join(temp, outfile), 
+            os.path.join(final, outfile))
 
 def load_blast(prey):
     print('loading blast for {}'.format(prey))
@@ -31,6 +40,7 @@ def load_blast(prey):
     with open(blast_path, 'rb') as f:
         blast = pkl.load(f)
         return blast
+
 
 def load_clean_pose(pdbid, prefix='prey_pdbs'):
     path = os.path.join(prefix, pdbid + '.clean.pdb')
@@ -54,9 +64,9 @@ if __name__=='__main__':
     datafile = '2020-03-18_Krogan_SARSCoV2_27baits.txt'
     df = pd.read_csv(datafile, sep='\t')
     rownum = int(os.environ['SGE_TASK_ID'] - 1) // 2
+    #rownum = 62
     row = df.iloc[rownum]
     aligner = 'cealign' if (rownum%2 == 0) else 'align'
-    #row = df.iloc[rownum]
     percent_id = int(args['--percent_id'])
     aligner = args['--aligner']
     uniprot_id = row['Preys']
@@ -68,6 +78,15 @@ if __name__=='__main__':
     reference_pose = pose_from_file(reference_pdb)
     df = empty_interface_dataframe()
 
+    if 'TMPDIR' in os.environ:
+        os_tmp = os.environ['TMPDIR']
+    else:
+        os_tmp = os.path.join('/scratch', os.environ['USER'])
+    
+    tempdir = os.path.join(os_tmp, row['Bait'], uniprot_id)
+    if not os.path.exists(tempdir):
+        print('making temp outdirs')
+        os.makedirs(tempdir, exist_ok=True)
     outdir = os.path.join('outputs', row['Bait'], uniprot_id)
     if not os.path.exists(outdir):
         print('making outdirs')
@@ -100,11 +119,13 @@ if __name__=='__main__':
 
             interface_aligner = PyMOLAligner(aligner, interfaces, pdbid,
                     reference_pdb,
-                    output_dir=os.path.join('outputs', row['Bait'], uniprot_id))
+                    output_dir=tempdir)
             interface_aligner.align_patches()
             df = df.append(interface_aligner.interface.dataframe,
                     ignore_index=True)
             del interface_aligner
+
+    finish_io(tempdir, outdir, prefix='{}_{}'.format(row['Bait'], uniprot_id))
 
     df.to_pickle(os.path.join('outputs', row['Bait'], uniprot_id,
         'dataframe_{}.pkl'.format(aligner)))
