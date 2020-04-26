@@ -1,3 +1,4 @@
+#! /wynton/home/kortemme/krivacic/software/anaconda36/bin/python3
 from prody import *
 from Bio import SwissProt
 import sys
@@ -7,7 +8,7 @@ from io import StringIO
 
 def run_blast(sequence):
     #return blastPDB(sequence)
-    return blastPDB(sequence, timeout=240)
+    return blastPDB(sequence, sleep=11)
 
 
 def get_sequence(cID):

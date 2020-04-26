@@ -251,7 +251,7 @@ class PyInterface():
 class PyMOLAligner(object):
     def __init__(self, aligner, interface,
             pdbid, reference_pdb, output_dir='.',
-            input_dir='test_inputs', window=3, cycles=0):
+            input_dir='prey_pdbs', window=3, cycles=0):
         # String, either 'cealign' or 'align'
         self.aligner=aligner
         # PyInterface object
