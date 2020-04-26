@@ -27,7 +27,7 @@ def submit(**params):
     max_runtime = params.get('max_runtime','24:00:00')
     max_memory = params.get('max_memory','4G')
 
-    python = '/wynton/home/kortemme/krivacic/software/anaconda3/bin/python'
+    python = '/wynton/home/kortemme/krivacic/software/anaconda3/bin/python3'
     script_path = os.path.expanduser('~/sars/interface_analyzer/cluster_run.py')
 
     qsub_command = 'qsub', '-h', '-cwd',
@@ -39,7 +39,7 @@ def submit(**params):
     qsub_command += '-t', '1-{0}'.format(num_tasks),
     qsub_command += '-l', 'h_rt={0}'.format(max_runtime),
     qsub_command += '-l', 'mem_free={0}'.format(max_memory),
-    #qsub_command += python,
+    qsub_command += python,
     qsub_command += script_path,
     print(qsub_command)
 

@@ -1,3 +1,6 @@
+#! /wynton/home/kortemme/krivacic/software/anaconda36/bin/python3
+#$ -l mem_free=4G
+#$ -cwd
 """
 Usage: cluster_run.py [options]
 
@@ -5,6 +8,7 @@ Options:
     --aligner=STR  Run cealign instead of default align in PyMOL.
     [default: align]
     --percent_id=NUM  What percentage identity for query proteins  [default: 70]
+    --tasknum=[NUMBER]  Just run a specific task
 """
 from blast import *
 from interface import *
@@ -16,15 +20,23 @@ import docopt
 
 def finish_io(temp, final, prefix=''):
     from shutil import copyfile
+    import subprocess
+    print('Finishing IO')
     if not os.path.exists(final):
         os.makedirs(final, exist_ok=True)
-    outfile = '{}_outputs'.format(prefix)
+    outfile = '{}_outputs.tar.gz'.format(prefix)
     cmd = 'tar -czvf ' + os.path.join(temp, outfile) + ' --directory=' + temp + ' .'
-    copyfile os.path.join(os.path.join(temp, outfile), 
+    cmd = ' '.split(cmd)
+    print('RUNNING COMMAND {}'.format(cmd))
+    result = subprocess.run(cmd, stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT)
+    result.stdout.decode('utf-8')
+    print(result)
+    #os.system(cmd)
+    copyfile(os.path.join(temp, outfile), 
             os.path.join(final, outfile))
 
 def load_blast(prey):
-    print('loading blast for {}'.format(prey))
     seq_path = os.path.join('seqs', '{}.pkl'.format(prey))
     if not os.path.exists(seq_path):
         return None
@@ -63,25 +75,33 @@ if __name__=='__main__':
     args = docopt.docopt(__doc__)
     datafile = '2020-03-18_Krogan_SARSCoV2_27baits.txt'
     df = pd.read_csv(datafile, sep='\t')
-    rownum = int(os.environ['SGE_TASK_ID'] - 1) // 2
-    #rownum = 62
+    #print('ROWNUM: {}'.format(rownum))
+    if args['--tasknum']:
+        tasknum = int(args['--tasknum'])
+    else:
+        tasknum = (int(os.environ['SGE_TASK_ID']) - 1)
+    rownum = tasknum // 2
     row = df.iloc[rownum]
-    aligner = 'cealign' if (rownum%2 == 0) else 'align'
-    percent_id = int(args['--percent_id'])
+    aligner = 'cealign' if (tasknum%2 == 0) else 'align'
+    print('Using aligner {}'.format(aligner))
+    percent_id = 60
     aligner = args['--aligner']
     uniprot_id = row['Preys']
-    init()
-    pymol.finish_launching(['pymol','-qc'])
+    init("-total_threads 1")
+    #pymol.finish_launching(['pymol','-qc'])
 
     blast = load_blast(uniprot_id)
+    print('Blast record:')
+    print(blast)
     reference_pdb = parse_bait(row)
+    print('Loading reference pose from {}'.format(reference_pdb))
     reference_pose = pose_from_file(reference_pdb)
     df = empty_interface_dataframe()
 
     if 'TMPDIR' in os.environ:
         os_tmp = os.environ['TMPDIR']
     else:
-        os_tmp = os.path.join('/scratch', os.environ['USER'])
+        os_tmp = os.path.join('temp', os.environ['USER'])
     
     tempdir = os.path.join(os_tmp, row['Bait'], uniprot_id)
     if not os.path.exists(tempdir):
@@ -95,6 +115,7 @@ if __name__=='__main__':
     pdbs = blast.getHits(percent_identity=percent_id)
     print(pdbs)
     for pdbid in pdbs:
+        print('Running alignments for {}'.format(pdbid))
         cached_df = empty_interface_dataframe()
         pickle_path = os.path.join(
                 'outputs', row['Bait'], uniprot_id, '{}_{}'.format(pdbid,
@@ -125,7 +146,8 @@ if __name__=='__main__':
                     ignore_index=True)
             del interface_aligner
 
-    finish_io(tempdir, outdir, prefix='{}_{}'.format(row['Bait'], uniprot_id))
+    finish_io(tempdir, outdir, prefix='{}_{}'.format(
+        row['Bait'][len('SARS-CoV2 '):].lower(), uniprot_id))
 
     df.to_pickle(os.path.join('outputs', row['Bait'], uniprot_id,
         'dataframe_{}.pkl'.format(aligner)))

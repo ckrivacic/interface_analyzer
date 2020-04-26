@@ -1,3 +1,4 @@
+#! /wynton/home/kortemme/krivacic/software/anaconda36/bin/python3
 from prody import *
 from Bio import SwissProt
 import sys
