@@ -9,6 +9,7 @@ Options:
     [default: align]
     --percent_id=NUM  What percentage identity for query proteins  [default: 70]
     --tasknum=[NUMBER]  Just run a specific task
+    --test  Only do one pdb
 """
 from blast import *
 from interface import *
@@ -26,7 +27,9 @@ def finish_io(temp, final, prefix=''):
         os.makedirs(final, exist_ok=True)
     outfile = '{}_outputs.tar.gz'.format(prefix)
     cmd = 'tar -czvf ' + os.path.join(temp, outfile) + ' --directory=' + temp + ' .'
-    cmd = ' '.split(cmd)
+    print('initial command...')
+    print(cmd)
+    cmd = cmd.split(' ')
     print('RUNNING COMMAND {}'.format(cmd))
     result = subprocess.run(cmd, stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT)
@@ -103,7 +106,7 @@ if __name__=='__main__':
     else:
         os_tmp = os.path.join('temp', os.environ['USER'])
     
-    tempdir = os.path.join(os_tmp, row['Bait'], uniprot_id)
+    tempdir = os.path.join(os_tmp, row['Bait'][len('SARS-CoV2 '):], uniprot_id)
     if not os.path.exists(tempdir):
         print('making temp outdirs')
         os.makedirs(tempdir, exist_ok=True)
@@ -145,6 +148,8 @@ if __name__=='__main__':
             df = df.append(interface_aligner.interface.dataframe,
                     ignore_index=True)
             del interface_aligner
+        if args['--test']:
+            break
 
     finish_io(tempdir, outdir, prefix='{}_{}'.format(
         row['Bait'][len('SARS-CoV2 '):].lower(), uniprot_id))
