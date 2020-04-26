@@ -81,12 +81,15 @@ class Patches(object):
         else:
             self.resmap = None
 
-    def nearest_n_residues(self, resnum, n, cutoff=30.0):
+    def nearest_n_residues(self, resnum, n, cutoff=30.0, pymol=False):
         if np.any(self.resmap) and not self.resmap.empty:
             neighbors = self.resmap[(self.resmap['res1']==resnum) &
                     (self.resmap['dist'] <
                         cutoff)].sort_values(by='dist')['res2']
-            return set(neighbors[0:n].tolist())
+            if not pymol:
+                return set(neighbors[0:n].tolist())
+            else:
+                return reslist_to_pdb_numbers(set(neighbors[0:n].tolist()))
         else:
             return None
 

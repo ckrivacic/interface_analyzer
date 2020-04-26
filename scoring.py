@@ -41,7 +41,8 @@ def find_pdbs(directory, pattern='*.pdb'):
                 yield filename
 
 
-def score_pdbs(dataframe, aligner='align', skip=[], out='test_out.pkl'):
+def score_pdbs(dataframe, aligner='align', skip=[], out='test_out.pkl',
+        reference_surface=None):
     """Score all pdbs in a 'patches' dataframe and update the dataframe."""
     sfxn = motif_scorefxn()
     save_check = 0
@@ -86,6 +87,19 @@ def score_pdbs(dataframe, aligner='align', skip=[], out='test_out.pkl'):
             patch_total += residue_energy
             residue_dict[residue] = residue_energy
         '''
+        # Score entire surface of reference
+        if reference_surface:
+            ref_surface_total = 0
+            for residue in reference_surface:
+                resnum = int(residue.split(' ')[0])
+                chain = residue.split(' ')[1]
+                rosettanum = pose.pdb_info().pdb2pose(chain, resnum)
+                if rosettanum != 0:
+                    residue_energy =\
+                            pose.energies().residue_total_energy(rosettanum)
+                    interacting_residues_total += residue_energy
+                    residue_dict[rosettanum] = residue_energy
+
         # Get total for residues in the interacting patch
         interacting_residues_total = 0
         for residue in row['pymol_target_patch']:
@@ -245,8 +259,11 @@ os.environ['HOME'] + '/rosetta/database/additional_protocol_data/motif_dock/xh_1
     '''
     df = pd.read_pickle(input_dataframe)
     score_pdbs(df, aligner=aligner, skip=skip)
+    # Determine reference surface residues
+    reference_surface = reference_patches.reslist
+
     #score_pdbs(df)
     #score_row(df, 6962)
-    df.to_pickle(input_dataframe)
+    df.to_pickle(input_dataframe, reference_surface=reference_surface)
     if args['--csv_out']:
         df.to_csv(args['--csv_out'])

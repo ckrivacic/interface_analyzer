@@ -59,7 +59,12 @@ def int_list_to_pdb_numbers(reslist, chain='Z'):
     '''
     pdblist = []
     for res in reslist:
-        pdblist.append(' '.join([str(res), chain]))
+        if type(res) == type('hi'):
+            spl = res.split(' ')
+            resnum = res.split(' ')[0]
+            pdblist.append(' '.join([str(resnum), chain]))
+        else:
+            pdblist.append(' '.join([str(res), chain]))
 
     return pdblist
 
@@ -68,7 +73,11 @@ def rosetta_numbers_from_pdb(reslist, pose, chain='A'):
     '''Get list of rosetta numbers from a list of PDB numbers'''
     rosetta_list = []
     for resi in reslist:
-        rosetta_list.append(pose.pdb_info().pdb2pose(chain, resi))
+        if type(resi) == type('hi'):
+            spl = resi.split(' ')
+            rosetta_list.append(pose.pdb_info().pdb2pose(spl[1], spl[0]))
+        else:
+            rosetta_list.append(pose.pdb_info().pdb2pose(chain, resi))
 
     return rosetta_list
 
