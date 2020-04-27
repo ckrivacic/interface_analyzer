@@ -258,12 +258,12 @@ os.environ['HOME'] + '/rosetta/database/additional_protocol_data/motif_dock/xh_1
                 row['align_combined_pdb_path'[:-4] + '_0001.pdb']
     '''
     df = pd.read_pickle(input_dataframe)
-    score_pdbs(df, aligner=aligner, skip=skip)
     # Determine reference surface residues
     reference_surface = reference_patches.reslist
+    score_pdbs(df, aligner=aligner, skip=skip, reference_surface=reference_surface)
 
     #score_pdbs(df)
     #score_row(df, 6962)
-    df.to_pickle(input_dataframe, reference_surface=reference_surface)
+    df.to_pickle(input_dataframe)
     if args['--csv_out']:
         df.to_csv(args['--csv_out'])
