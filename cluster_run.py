@@ -85,10 +85,13 @@ if __name__=='__main__':
         tasknum = (int(os.environ['SGE_TASK_ID']) - 1)
     rownum = tasknum // 2
     row = df.iloc[rownum]
-    aligner = 'cealign' if (tasknum%2 == 0) else 'align'
+    if tasknum%2 == 0:
+        aligner = 'cealign'
+    else:
+        aligner = 'align'
     print('Using aligner {}'.format(aligner))
     percent_id = 60
-    aligner = args['--aligner']
+    #aligner = args['--aligner']
     uniprot_id = row['Preys']
     init("-total_threads 1")
     #pymol.finish_launching(['pymol','-qc'])
@@ -151,8 +154,8 @@ if __name__=='__main__':
         if args['--test']:
             break
 
-    finish_io(tempdir, outdir, prefix='{}_{}'.format(
-        row['Bait'][len('SARS-CoV2 '):].lower(), uniprot_id))
+    finish_io(tempdir, outdir, prefix='{}_{}_{}'.format(
+        row['Bait'][len('SARS-CoV2 '):].lower(), aligner, uniprot_id))
 
     df.to_pickle(os.path.join('outputs', row['Bait'], uniprot_id,
         'dataframe_{}.pkl'.format(aligner)))
