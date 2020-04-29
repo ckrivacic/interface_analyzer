@@ -17,6 +17,13 @@ def make_pymol_session(df, idx, out='temp.pse', aligner='align'):
     row = df.iloc[idx]
 
     pdb_path = row['{}_combined_pdb_path'.format(aligner)]
+
+    def parse_pdb_path(path):
+        split = path.split('/')[-5:]
+        split.insert(0, 'outputs')
+        return os.path.join(*split)
+
+    pdb_path = parse_pdb_path(pdb_path)
     #pdb_path = 'outputs/P55789/3r7c_align/combined/3r7c_48_length_13_rmsd_1.95_0001.pdb'
     pdbinfo = pose_from_file(pdb_path).pdb_info()
     #pymol.finish_launching(['pymol', '-qc'])
