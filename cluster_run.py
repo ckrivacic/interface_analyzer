@@ -100,6 +100,7 @@ if __name__=='__main__':
     print('Blast record:')
     print(blast)
     reference_pdb = parse_bait(row)
+    reference_interfaces = get_reference_definition(reference_pdb)
     print('Loading reference pose from {}'.format(reference_pdb))
     reference_pose = pose_from_file(reference_pdb)
     df = empty_interface_dataframe()
@@ -109,11 +110,12 @@ if __name__=='__main__':
     else:
         os_tmp = os.path.join('temp', os.environ['USER'])
     
-    tempdir = os.path.join(os_tmp, row['Bait'][len('SARS-CoV2 '):], uniprot_id)
+    bait = row['Bait'][len('SARS-CoV2 '):]
+    tempdir = os.path.join(os_tmp, bait, uniprot_id)
     if not os.path.exists(tempdir):
         print('making temp outdirs')
         os.makedirs(tempdir, exist_ok=True)
-    outdir = os.path.join('outputs', row['Bait'], uniprot_id)
+    outdir = os.path.join('outputs', bait, uniprot_id)
     if not os.path.exists(outdir):
         print('making outdirs')
         os.makedirs(outdir, exist_ok=True)
@@ -124,7 +126,7 @@ if __name__=='__main__':
         print('Running alignments for {}'.format(pdbid))
         cached_df = empty_interface_dataframe()
         pickle_path = os.path.join(
-                'outputs', row['Bait'], uniprot_id, '{}_{}'.format(pdbid,
+                'outputs', bait, uniprot_id, '{}_{}'.format(pdbid,
                     aligner), 'patches.pkl'
                 )
         if os.path.exists(pickle_path):
@@ -157,7 +159,7 @@ if __name__=='__main__':
     finish_io(tempdir, outdir, prefix='{}_{}_{}'.format(
         row['Bait'][len('SARS-CoV2 '):].lower(), aligner, uniprot_id))
 
-    df.to_pickle(os.path.join('outputs', row['Bait'], uniprot_id,
+    df.to_pickle(os.path.join('outputs', bait, uniprot_id,
         'dataframe_{}.pkl'.format(aligner)))
-    df.to_csv(os.path.join('outputs', row['Bait'], uniprot_id,
+    df.to_csv(os.path.join('outputs', bait, uniprot_id,
         'dataframe_{}.csv'.format(aligner)))

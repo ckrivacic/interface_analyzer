@@ -4,7 +4,7 @@ Usage:
     submit.py
 
 '''
-import sys, os, subprocess, re
+import sys, os, subprocess, re, glob
 import docopt
 #task_len = 500
 
@@ -19,18 +19,17 @@ def submit(**params):
     import json
     args = docopt.docopt(__doc__)
     #script_path = os.path.expanduser(args['<script>'])
-    logdir = 'logs'
-    csv_path = '2020-03-18_Krogan_SARSCoV2_27baits.txt'
+    logdir = 'logs/scoring2/'
     if not os.path.exists(logdir):
         os.makedirs(logdir, exist_ok=True)
 
-    num_tasks = file_len(csv_path) * 2
+    num_tasks = len(glob.glob('outputs/*/*/*.pkl'))
 
     max_runtime = params.get('max_runtime','24:00:00')
     max_memory = params.get('max_memory','4G')
 
     python = '/wynton/home/kortemme/krivacic/software/anaconda3/bin/python3'
-    script_path = os.path.expanduser('~/sars/interface_analyzer/cluster_run.py')
+    script_path = os.path.expanduser('~/sars/interface_analyzer/cluster_scoring.py')
 
     qsub_command = 'qsub', '-h', '-cwd',
     qsub_command += '-b',

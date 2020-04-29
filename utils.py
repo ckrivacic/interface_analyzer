@@ -44,7 +44,7 @@ def res_selector_to_size_list(resselector):
     return intlist_to_vector1_size(size_list)
 
 
-def reslist_to_pdb_numbers(reslist, pose):
+def reslist_to_pdb_numbers(reslist, pose, chain=None):
     poselist = []
     for res in reslist:
         poselist.append(pose.pdb_info().pose2pdb(res))

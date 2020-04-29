@@ -14,6 +14,13 @@ import docopt
 import tqdm
 
 
+def fix_path(df_path, prefix=''):
+    pathlist = df_path.split('/')[-5:]
+    pathlist[0] = prefix + pathlist[0]
+    pathlist.insert(0, 'outputs')
+    return os.path.join(*pathlist)
+
+
 def motif_scorefxn(vdw_weight=1.0):
     '''
     Returns sforefunction with just motif_dock enabled
@@ -42,7 +49,7 @@ def find_pdbs(directory, pattern='*.pdb'):
 
 
 def score_pdbs(dataframe, aligner='align', skip=[], out='test_out.pkl',
-        reference_surface=None):
+        reference_surface=None, fix_paths=True):
     """Score all pdbs in a 'patches' dataframe and update the dataframe."""
     sfxn = motif_scorefxn()
     save_check = 0
@@ -52,13 +59,16 @@ def score_pdbs(dataframe, aligner='align', skip=[], out='test_out.pkl',
             continue
         else:
             breakcheck = False
-            if pdb_path.split('/')[-1].split('_')[0] in skip:
-                breakcheck = True
-            pose = pose_from_file(pdb_path)
-            switch = SwitchResidueTypeSetMover("centroid")
-            switch.apply(pose)
+        print('USING PATH {}'.format(pdb_path))
+        if fix_paths:
+            pdb_path = fix_path(pdb_path)
+        if pdb_path.split('/')[-1].split('_')[0] in skip:
+            breakcheck = True
         if breakcheck:
             continue
+        pose = pose_from_file(pdb_path)
+        switch = SwitchResidueTypeSetMover("centroid")
+        switch.apply(pose)
         save_check += 1
         dataframe.at[idx, 'pose_score'] = sfxn(pose)
         interface_total = 0.0
@@ -92,12 +102,13 @@ def score_pdbs(dataframe, aligner='align', skip=[], out='test_out.pkl',
             ref_surface_total = 0
             for residue in reference_surface:
                 resnum = int(residue.split(' ')[0])
-                chain = residue.split(' ')[1]
+                #chain = residue.split(' ')[1]
+                chain = 'Z'
                 rosettanum = pose.pdb_info().pdb2pose(chain, resnum)
                 if rosettanum != 0:
                     residue_energy =\
                             pose.energies().residue_total_energy(rosettanum)
-                    interacting_residues_total += residue_energy
+                    ref_surface_total += residue_energy
                     residue_dict[rosettanum] = residue_energy
 
         # Get total for residues in the interacting patch
@@ -133,6 +144,8 @@ def score_pdbs(dataframe, aligner='align', skip=[], out='test_out.pkl',
         dataframe.at[idx, '{}_reference_score'.format(aligner)] = reference_total
         dataframe.at[idx, '{}_target_patch_score'.format(aligner)] =\
                 interacting_residues_total
+        dataframe.at[idx, '{}_reference_surface_score'.format(aligner)]\
+                = ref_surface_total
         if save_check == 100:
             dataframe.to_pickle(out)
             save_check = 0
