@@ -70,7 +70,9 @@ def score_pdbs(dataframe, aligner='align', skip=[], out='test_out.pkl',
         print('USING PATH {}'.format(pdb_path))
         if fix_paths:
             pdb_path = fix_path(pdb_path)
+        print('FINAL PATH: {}'.format(pdb_path))
         if pdb_path.split('/')[-1].split('_')[0] in skip:
+            print('SKIPPING {}'.format(pdb_path))
             continue
         pose = pose_from_file(pdb_path)
         switch = SwitchResidueTypeSetMover("centroid")

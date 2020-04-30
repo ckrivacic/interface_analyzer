@@ -19,6 +19,7 @@ def parse_df_path(df_path):
 
 
 if __name__=="__main__":
+    initialize()
     args = docopt.docopt(__doc__)
     dataframes = sorted(glob.glob("outputs/*/*/*.pkl"))
     print(dataframes)
@@ -35,7 +36,6 @@ if __name__=="__main__":
     aligner = parse_df_path(df_path)
     print(aligner)
 
-    initialize()
     # Shouldn't need this anymore since I functionalized this
     # initialization
     '''
