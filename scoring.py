@@ -14,6 +14,16 @@ import docopt
 import tqdm
 
 
+def initialize():
+        init('-docking_low_res_score motif_dock_score \
+-mh:path:scores_BB_BB ' + \
+os.environ['HOME'] + '/rosetta/database/additional_protocol_data/motif_dock/xh_16_ \
+-mh:score:use_ss1 false \
+-mh:score:use_ss2 false \
+-mh:score:use_aa1 true \
+-mh:score:use_aa2 true')
+
+
 def fix_path(df_path, prefix=''):
     pathlist = df_path.split('/')[-5:]
     pathlist[0] = prefix + pathlist[0]
