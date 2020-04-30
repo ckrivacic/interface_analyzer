@@ -28,12 +28,17 @@ if __name__=="__main__":
         tasknum = int(os.environ['SGE_TASK_ID']) - 1
 
     df_path = dataframes[tasknum]
+    print('OPENING DATAFRAME {}'.format(df_path))
     reference_pdbid = dataframes[tasknum].split('/')[1]
     reference_pdb = os.path.join('virus_pdbs', reference_pdbid.lower() +
             '.clean.pdb')
     aligner = parse_df_path(df_path)
     print(aligner)
 
+    initialize()
+    # Shouldn't need this anymore since I functionalized this
+    # initialization
+    '''
     init("-docking_low_res_score motif_dock_score \
 -mh:path:scores_BB_BB  " + \
 os.environ['HOME'] +
@@ -42,6 +47,7 @@ os.environ['HOME'] +
 -mh:score:use_ss2 false \
 -mh:score:use_aa1 true \
 -mh:score:use_aa2 true")
+    '''
 
     df = pd.read_pickle(df_path)
     # Determine reference surface residues

@@ -3,7 +3,7 @@ Define reference interface.
 Required: reference_interfaces  (list of list), 
 reference_pdb (path to reference pdb file)
 '''
-import os
+import os, sys
 from patches import Patches
 from utils import reslist_to_pdb_numbers
 from pyrosetta import *
@@ -43,5 +43,5 @@ def get_reference_definition(reference_pdb, patches=True,
 
 if __name__=="__main__":
     from utils import *
-    for i in reference_interfaces:
+    for i in get_reference_definition(sys.argv[1]):
         print(reslist_to_selstr(i))

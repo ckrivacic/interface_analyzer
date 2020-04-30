@@ -67,20 +67,18 @@ def score_pdbs(dataframe, aligner='align', skip=[], out='test_out.pkl',
         pdb_path = row['{}_combined_pdb_path'.format(aligner)]
         if pd.isnull(pdb_path):
             continue
-        else:
-            breakcheck = False
         print('USING PATH {}'.format(pdb_path))
         if fix_paths:
             pdb_path = fix_path(pdb_path)
         if pdb_path.split('/')[-1].split('_')[0] in skip:
-            breakcheck = True
-        if breakcheck:
             continue
         pose = pose_from_file(pdb_path)
         switch = SwitchResidueTypeSetMover("centroid")
         switch.apply(pose)
         save_check += 1
-        dataframe.at[idx, 'pose_score'] = sfxn(pose)
+        pose_score = sfxn(pose)
+        dataframe.at[idx, 'pose_score'] = pose_score
+        print('Score: {}'.format(pose_score))
         interface_total = 0.0
         residue_dict = {}
         for residue in row['pymol_target_interface']:
@@ -109,6 +107,7 @@ def score_pdbs(dataframe, aligner='align', skip=[], out='test_out.pkl',
         '''
         # Score entire surface of reference
         if reference_surface:
+            print('Scoring surface')
             ref_surface_total = 0
             for residue in reference_surface:
                 resnum = int(residue.split(' ')[0])
@@ -118,6 +117,8 @@ def score_pdbs(dataframe, aligner='align', skip=[], out='test_out.pkl',
                 if rosettanum != 0:
                     residue_energy =\
                             pose.energies().residue_total_energy(rosettanum)
+                    print('Energy for residue {}: {}'.format(str(resnum)
+                        + chain, residue_energy))
                     ref_surface_total += residue_energy
                     residue_dict[rosettanum] = residue_energy
 
@@ -130,6 +131,8 @@ def score_pdbs(dataframe, aligner='align', skip=[], out='test_out.pkl',
             if rosettanum != 0:
                 residue_energy =\
                         pose.energies().residue_total_energy(rosettanum)
+                print('Energy for residue {}: {}'.format(str(resnum)
+                    + chain, residue_energy))
                 interacting_residues_total += residue_energy
                 residue_dict[rosettanum] = residue_energy
 
@@ -142,6 +145,8 @@ def score_pdbs(dataframe, aligner='align', skip=[], out='test_out.pkl',
             if rosettanum != 0:
                 residue_energy =\
                         pose.energies().residue_total_energy(rosettanum)
+                print('Energy for residue {}: {}'.format(str(resnum)
+                    + chain, residue_energy))
                 reference_total += residue_energy
                 residue_dict[rosettanum] = residue_energy
         
