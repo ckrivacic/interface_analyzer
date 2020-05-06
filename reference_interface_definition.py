@@ -27,7 +27,7 @@ def get_reference_definition(reference_pdb, patches=True,
         reference_interfaces.append(reference_interface_all)
 
     else:
-        init()
+        #init()
         reference_pose = pose_from_file(reference_pdb)
         reference_patches = Patches(reference_pose)
         reference_patches.determine_surface_residues()
