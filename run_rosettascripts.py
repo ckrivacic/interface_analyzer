@@ -6,7 +6,6 @@ Usage: run_rosettascripts.py <xml> [options]
 
 Options:
     --tasknum=[NUMBER]  Just run a specific task
-    --test  Only do one pdb
     --parent_dir=STR  Where are the pdb files?
     [default: /home/cody/sars/pymol_sessions]
     --outdir=STR  Where to put output files?  [default: relaxed_outputs]
@@ -31,10 +30,12 @@ def run_command(command):
 
 if __name__=='__main__':
     rosetta_scripts_path = \
-            '/kortemmelab/home/ckrivacic/rosetta/source/bin/rosetta_scripts.linuxgccrelease'
+            '/wynton/home/kortemme/krivacic/rosetta/source/bin/rosetta_scripts.linuxgccrelease'
+            #'/kortemmelab/home/ckrivacic/rosetta/source/bin/rosetta_scripts.linuxgccrelease'
             #'/home/cody/rosetta/main/source/bin/rosetta_scripts.linuxgccrelease'
     rosetta_database_path = \
-            '/kortemmelab/home/ckrivacic/rosetta/database'
+            '/wynton/home/kortemme/krivacic/rosetta/database'
+            #'/kortemmelab/home/ckrivacic/rosetta/database'
             #'/home/cody/rosetta/main/database'
     args = docopt.docopt(__doc__)
 
@@ -48,7 +49,7 @@ if __name__=='__main__':
     parent_dir = args['--parent_dir']
     xml = args['<xml>']
     pdbs = sorted(glob.glob(parent_dir + '/*/*/*.pdb'))
-    pdb = pdbs[tasknum]
+    pdb = pdbs[tasknum//10]
 
 
     rosetta_cmd = [
