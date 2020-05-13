@@ -70,8 +70,10 @@ def relax_pose(pose):
 def score_dg(pose):
     #chain = pyrosetta.rosetta.std.set_int_t()
     chain = pose.pdb_info().pdb2pose('Z', 1)
-    chainmap = pose.pdb_info().chain_sequences()
-    print(chainmap)
+    chain_poses = pose.split_by_chain()
+    for chain in chain_poses:
+        ch = chain.pdb_info().pose2pdb(1).split(' ')[1]
+        print(ch)
     it = chainmap.begin()
     for ch in chainmap:
         print(ch.first)
@@ -81,7 +83,7 @@ def score_dg(pose):
 if __name__=='__main__':
     init()
     testfile = \
-            '/home/krivacic/sars-cov-2/figures/pymol_sessions/Nsp7/P61026/2eqb_cealign_18957_alignscore_n14.pdb'
+            '/home/cody/sars/pymol_sessions/Nsp7/P61026/2eqb_cealign_18957_alignscore_n14.pdb'
     pose = pose_from_file(testfile)
     #fast_relax(pose)
     score_dg(pose)
