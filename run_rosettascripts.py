@@ -31,9 +31,11 @@ def run_command(command):
 
 if __name__=='__main__':
     rosetta_scripts_path = \
-            '/home/cody/rosetta/main/source/bin/rosetta_scripts.linuxgccrelease'
+            '/kortemmelab/home/ckrivacic/rosetta/source/bin/rosetta_scripts.linuxgccrelease'
+            #'/home/cody/rosetta/main/source/bin/rosetta_scripts.linuxgccrelease'
     rosetta_database_path = \
-            '/home/cody/rosetta/main/database'
+            '/kortemmelab/home/ckrivacic/rosetta/database'
+            #'/home/cody/rosetta/main/database'
     args = docopt.docopt(__doc__)
 
     outdir = args['--outdir']

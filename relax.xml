@@ -1,31 +1,20 @@
 <ROSETTASCRIPTS>
 	<SCOREFXNS>
-        <ScoreFunction name='ref2015' weights='ref2015' />
+		<ScoreFunction name="ref2015" weights="ref2015" />
 	</SCOREFXNS>
-	<RESIDUE_SELECTORS>
-	</RESIDUE_SELECTORS>
-	<TASKOPERATIONS>
-	</TASKOPERATIONS>
-	<MOVE_MAP_FACTORIES>
-	</MOVE_MAP_FACTORIES>
-	<SIMPLE_METRICS>
-	</SIMPLE_METRICS>
-	<FILTERS>
-	</FILTERS>
 	<MOVERS>
-        <FastRelax name='fastrelax' scorefxn='ref2015' />
-        <InterfaceAnalyzerMover name='interface' scorefxn='ref2015'
-            pack_separated='true'
-            pack_input='true'
-            packstat='true'
-            tracers='true'
-            use_jobname='true'
-            interface_sc='true'
-            ligandchain='Z' />
+		<FastRelax name="fastrelax" scorefxn="ref2015" />
+		<InterfaceAnalyzerMover name="interface" scorefxn="ref2015"
+		    pack_separated="true"
+		    pack_input="true"
+		    packstat="true"
+		    tracer="true"
+		    use_jobname="true"
+		    interface_sc="true"
+		    ligandchain="Z" />
 	</MOVERS>
 	<PROTOCOLS>
-        <Add mover_name='fastrelax' />
-        <Add mover_name='interface' />
+		<Add mover_name="fastrelax" />
+		<Add mover_name="interface" />
 	</PROTOCOLS>
-	<OUTPUT />
 </ROSETTASCRIPTS>
