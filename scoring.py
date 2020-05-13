@@ -288,8 +288,12 @@ os.environ['HOME'] + '/rosetta/database/additional_protocol_data/motif_dock/xh_1
                 row['align_combined_pdb_path'[:-4] + '_0001.pdb']
     '''
     df = pd.read_pickle(input_dataframe)
+    reference_pdbid = input_dataframe.split('/')[1]
+    reference_pdb = os.path.join('virus_pdbs', reference_pdbid.lower() +
+            '.clean.pdb')
     # Determine reference surface residues
-    reference_surface = reference_patches.reslist
+    reference_surface = get_reference_definition(reference_pdb,
+            return_surface=True)
     score_pdbs(df, aligner=aligner, skip=skip, reference_surface=reference_surface)
 
     #score_pdbs(df)
