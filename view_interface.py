@@ -64,6 +64,8 @@ def make_pymol_session(df, idx, out='temp.pse', aligner='align'):
         pymol.cmd.show('sticks', 'resi {} and chain {}'.format(resnum,
             chain))
 
+    pymol.cmd.remove('hydro')
+
     pymol.cmd.save(out)
 
 
