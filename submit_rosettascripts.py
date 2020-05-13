@@ -4,7 +4,7 @@ Usage:
     submit.py
 
 '''
-import sys, os, subprocess, re
+import sys, os, subprocess, re, glob
 import docopt
 #task_len = 500
 
@@ -19,13 +19,13 @@ def submit(**params):
     import json
     args = docopt.docopt(__doc__)
     #script_path = os.path.expanduser(args['<script>'])
-    logdir = 'logs'
+    logdir = 'rosettascripts_logs'
     csv_path = '2020-03-18_Krogan_SARSCoV2_27baits.txt'
     if not os.path.exists(logdir):
         os.makedirs(logdir, exist_ok=True)
 
     pdb_path = os.path.expanduser('~/sars/figures/pymol_sessions/')
-    num_tasks = len(glob.glob(pdb_path + '/*/*/*.pdb')) * 10
+    num_tasks = len(glob.glob(pdb_path + '/*/*/*.pdb')) * 100
 
     max_runtime = params.get('max_runtime','24:00:00')
     max_memory = params.get('max_memory','4G')
@@ -46,6 +46,7 @@ def submit(**params):
     qsub_command += '-l', 'mem_free={0}'.format(max_memory),
     qsub_command += python,
     qsub_command += script_path,
+    qsub_command += xml,
     qsub_command += '--parent_dir', pdb_path,
     print(qsub_command)
 
