@@ -43,5 +43,6 @@ def get_reference_definition(reference_pdb, patches=True,
 
 if __name__=="__main__":
     from utils import *
+    init()
     for i in get_reference_definition(sys.argv[1]):
         print(reslist_to_selstr(i))

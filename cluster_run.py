@@ -17,6 +17,7 @@ import sys
 from reference_interface_definition import *
 import pickle as pkl
 import docopt
+import glob
 
 
 def finish_io(temp, final, prefix=''):
@@ -60,9 +61,12 @@ def load_blast(prey):
 def load_clean_pose(pdbid, prefix='prey_pdbs'):
     path = os.path.join(prefix, pdbid + '.clean.pdb')
     if not os.path.exists(path):
-        return None
-    else:
-        return rosetta.core.import_pose.get_pdb_and_cleanup(path)
+        otherpath = os.path.join(prefix, pdbid + '.pdb')
+        if os.path.exists(otherpath):
+            pyrosetta.toolbox.cleanATOM(otherpath)
+        else:
+            return None
+    return rosetta.core.import_pose.get_pdb_and_cleanup(path)
 
 
 def parse_bait(row, prefix='SARS-CoV2 ', folder='virus_pdbs'):
@@ -90,7 +94,7 @@ if __name__=='__main__':
     else:
         aligner = 'align'
     print('Using aligner {}'.format(aligner))
-    percent_id = 60
+    percent_id = 30
     #aligner = args['--aligner']
     uniprot_id = row['Preys']
     init("-total_threads 1")
@@ -101,6 +105,9 @@ if __name__=='__main__':
     print(blast)
     reference_pdb = parse_bait(row)
     reference_interfaces = get_reference_definition(reference_pdb)
+    print('REFERENCE INTERFACES MAIN')
+    print(reference_interfaces)
+    print(reference_pdb)
     print('Loading reference pose from {}'.format(reference_pdb))
     reference_pose = pose_from_file(reference_pdb)
     df = empty_interface_dataframe()
@@ -121,7 +128,13 @@ if __name__=='__main__':
         os.makedirs(outdir, exist_ok=True)
 
     pdbs = blast.getHits(percent_identity=percent_id)
-    print(pdbs)
+    print(pdbs.keys())
+    more_pdbs = glob.glob('prey_pdbs/{}*.pdb'.format(uniprot_id))
+    print('EXTENDING PDBLIST WITH MODBASE. FINAL PDB LIST:')
+    for more_pdb in more_pdbs:
+        pdbs[more_pdb.split('/')[-1].split('.')[0]] = []
+    print(pdbs.keys())
+
     for pdbid in pdbs:
         print('Running alignments for {}'.format(pdbid))
         cached_df = empty_interface_dataframe()
@@ -137,6 +150,8 @@ if __name__=='__main__':
             print('Running alignments on {}'.format(pdbid))
             pymol.cmd.reinitialize()
             pose = load_clean_pose(pdbid)
+            print('POSE HERE ')
+            print(pose)
             if pose is None:
                 continue
             interfaces = PyInterface(pose, reference_pose)
@@ -144,11 +159,13 @@ if __name__=='__main__':
             interfaces.set_reference_interfaces(reference_interfaces)
             interfaces.set_dataframe(cached_df)
             interfaces.find_patches()
+            print('INTERFACE DATAFRAME')
             print(interfaces.dataframe)
 
             interface_aligner = PyMOLAligner(aligner, interfaces, pdbid,
                     reference_pdb,
                     output_dir=tempdir)
+            print('ALIGNING!!')
             interface_aligner.align_patches()
             df = df.append(interface_aligner.interface.dataframe,
                     ignore_index=True)

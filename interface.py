@@ -174,6 +174,7 @@ class PyInterface():
                         interacting_residues += partners
                     # No need to add a patch twice
                     if not patch in self.dataframe['rosetta_patch'].values:
+                        print(self.reference_interfaces)
                         for reslist in self.reference_interfaces:
                             row = {
                                     'pymol_chain': chainA,
@@ -222,6 +223,10 @@ class PyInterface():
                         interacting_residues += partners
                     # No need to add a patch twice
                     if not patch in self.dataframe['rosetta_patch'].values:
+                        print("PATCH")
+                        print(patch)
+                        print('REFERENCE INTERFACES')
+                        print(self.reference_interfaces)
                         for reslist in self.reference_interfaces:
                             row = {
                                     'pymol_chain': chainB,
@@ -350,6 +355,7 @@ class PyMOLAligner(object):
         Align all interface patches defined in reference and query proteins.
         '''
         i = 0
+        print('We are in align_patches')
         best_i = 0
         best_rmsd = 999
         formatted_outdir = os.path.join(self.output_dir,
@@ -358,6 +364,8 @@ class PyMOLAligner(object):
         # To do: add option to align reference interface by patches
         for idx, row in self.interface.dataframe.iterrows():
             query_interface = row['pymol_patch']
+            print('QUERY INTERFACE')
+            print(query_interface)
             if len(query_interface) == 0:
                 # Nothing to be done, no interface
                 continue

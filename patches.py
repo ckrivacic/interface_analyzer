@@ -49,12 +49,14 @@ class Patches(object):
 
         surface_selector = residue_selector.LayerSelector()
         surface_selector.set_layers(False, False, True)
-        try:
-            reslist =\
-                    res_selector_to_size_list(surface_selector.apply(chain_pose))
-            reslist = correct_resnums(chain_pose, reslist, self.pose)
-        except:
-            reslist = []
+        #try:
+        print(surface_selector.apply(chain_pose))
+        print(res_selector_to_size_list(surface_selector.apply(chain_pose)))
+        reslist =\
+                res_selector_to_size_list(surface_selector.apply(chain_pose))
+        reslist = correct_resnums(chain_pose, reslist, self.pose)
+        #except:
+        #    reslist = []
         if self.reslist:
             # If a reslist is already defined, only  take surface
             # residues that are in that reslist
