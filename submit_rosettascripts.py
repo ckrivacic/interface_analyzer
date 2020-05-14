@@ -1,7 +1,10 @@
 '''
 Please put path to pdbredo as $PDBREDO in your bashrc
 Usage:
-    submit.py
+    submit.py <scriptpath> [options]
+
+Options:
+    --num=INT  How many repeats per structure  [default: 100]
 
 '''
 import sys, os, subprocess, re, glob
@@ -25,7 +28,7 @@ def submit(**params):
         os.makedirs(logdir, exist_ok=True)
 
     pdb_path = os.path.expanduser('~/sars/figures/pymol_sessions/')
-    num_tasks = len(glob.glob(pdb_path + '/*/*/*.pdb')) * 100
+    num_tasks = len(glob.glob(pdb_path + '/*/*/*.pdb')) * int(args['--num'])
 
     max_runtime = params.get('max_runtime','24:00:00')
     max_memory = params.get('max_memory','4G')
@@ -33,7 +36,8 @@ def submit(**params):
     xml = '/wynton/home/kortemme/krivacic/sars/interface_analyzer/relax.xml'
 
     python = '/wynton/home/kortemme/krivacic/software/anaconda3/bin/python3'
-    script_path = os.path.expanduser('~/sars/interface_analyzer/run_rosettascripts.py')
+    #script_path = os.path.expanduser('~/sars/interface_analyzer/run_rosettascripts.py')
+    script_path = os.path.expanduser(args['<scriptpath>'])
 
     qsub_command = 'qsub', '-h', '-cwd',
     qsub_command += '-b',

@@ -2,16 +2,15 @@
 #$ -l mem_free=4G
 #$ -cwd
 """
-Usage: run_rosettascripts.py <xml> [options]
+Usage: relax_preys.py <xml> [options]
 
 Options:
-    --tasknum=[NUMBER]  Just run a specific task
+    --tasknum=NUMBER  Just run a specific task
     --parent_dir=STR  Where are the pdb files?
-    [default: /home/cody/sars/pymol_sessions]
-    --outdir=STR  Where to put output files?  [default: relaxed_outputs]
-"""
-import sys, glob, os, subprocess
-import docopt
+    [default: /wynton/home/kortemme/krivacic/sars/figures/pymol_sessions]
+    --outdir=STR  Where to put the output files?  [default: relaxed_outputs]
+    """
+import glob, os, docopt, subprocess, sys
 
 
 def run_command(command):
@@ -38,24 +37,27 @@ if __name__=='__main__':
             #'/kortemmelab/home/ckrivacic/rosetta/database'
             #'/home/cody/rosetta/main/database'
     args = docopt.docopt(__doc__)
-
+    parent_dir = args['--parent_dir']
+    pdbs = sorted(glob.glob(parent_dir + '/*/*/*.pdb'))
     outdir = args['--outdir']
+    print(pdbs)
 
     if args['--tasknum']:
         tasknum = int(args['--tasknum'])
     else:
-        tasknum = (int(os.environ['SGE_TASK_ID']) - 1)
+        tasknum = int(os.environ['SGE_TASK_ID']) - 1
 
-    parent_dir = args['--parent_dir']
     xml = args['<xml>']
-    pdbs = sorted(glob.glob(parent_dir + '/*/*/*.pdb'))
-    pdb = pdbs[tasknum//10]
 
+    pdb = pdbs[tasknum]
+    pdbid = os.path.basename(pdb).split('.')[0].split('_')[0]
+    print(pdbid)
+    infile = os.path.join('prey_pdbs', pdbid + '.clean.pdb')
 
     rosetta_cmd = [
             rosetta_scripts_path, 
             '-database', rosetta_database_path, 
-            '-in:file:s', pdb,
+            '-in:file:s', infile,
             '-out:prefix', outdir + '/',
             '-out:suffix', '_' + str(tasknum),
             '-out:no_nstruct_label',
