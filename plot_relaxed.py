@@ -5,8 +5,10 @@ Options:
     --filename=STR  Only plot a single origin
     -x STR  What to plot on x-axis  [default: origin]
     -y STR  What to plot on y-axis  [default: dG_separated]
+    --best=STR  Return the best based on the following metric
 """
 from matplotlib import pyplot as plt
+import sys
 import glob, os
 import pandas as pd
 import docopt
@@ -17,7 +19,8 @@ def read_and_calculate(pdb_path):
     Parse PDB file for scores
     """
     
-    record = {'path': os.path.basename(pdb_path)}
+    record = {'filename': os.path.basename(pdb_path)}
+    record['path'] = pdb_path
     origin = os.path.basename(pdb_path).split('.')[0].split('_')[:-1]
     origin = '_'.join(origin)
     print(origin)
@@ -62,7 +65,7 @@ def read_and_calculate(pdb_path):
     return record
 
 
-def load_pdbs(folder, filename=None):
+def load_pdbs(folder, filename=None, return_best=False):
     pdbfiles = sorted(glob.glob(folder + '/*.pdb'))
     pdbfiles_final = []
     if filename:
@@ -78,6 +81,25 @@ def load_pdbs(folder, filename=None):
         records.append(read_and_calculate(pdb))
 
     records = pd.DataFrame(records)
+    if return_best:
+        from shutil import copyfile
+        print('BEST SCORING MODELS BASED ON {}'.format(return_best))
+        if '/' in return_best:
+            return_best_folder = return_best.replace('/', '_')
+        else:
+            return_best_folder = return_best
+        out = os.path.join('relaxed_outputs',
+                'best_{}'.format(return_best_folder))
+        if not os.path.exists(out):
+            os.mkdir(out)
+        for name, group in records.groupby('origin'):
+            print(name)
+            row = group.loc[group[return_best].idxmin()]
+            best = row['path']
+            basename = row['filename']
+            copyfile(best, os.path.join(out,
+                basename))
+        sys.exit()
     return records
 
 
@@ -89,7 +111,7 @@ def plot(records, x='origin', y='dG_separated'):
 
     if x=='origin':
         yvals = []
-        labels = list(set(xvals))
+        labels = sorted(list(set(xvals)))
         labels_str = [str(l) for l in labels]
         for label in labels:
             record = records[records[x] == label]
@@ -104,14 +126,14 @@ def plot(records, x='origin', y='dG_separated'):
                 showmedians=True)
 
         for j, v in enumerate(yvals):
-            print(j, v)
+            #print(j, v)
             pos = max(v)# + 0.05 * abs(max(v))
-            print(pos)
+            #print(pos)
             ax.text(j, pos, labels[j])
 
         ax.set_xlabel('Parent structure')
         ax.set_ylabel(y)
-        ax.set_xticklabels(labels_str)
+        #ax.set_xticklabels(labels_str)
     
     plt.show()
 
@@ -121,5 +143,6 @@ if __name__=='__main__':
     y = args['-y']
     filename = args['--filename']
     folder = 'relaxed_outputs'
-    records = load_pdbs(folder)
+    return_best = args['--best']
+    records = load_pdbs(folder, return_best=return_best)
     plot(records, x=x, y=y)
