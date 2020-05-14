@@ -5,6 +5,7 @@ Usage:
 
 Options:
     --num=INT  How many repeats per structure  [default: 100]
+    --xml=STR  Which xml to use  [default: relax.xml]
 
 '''
 import sys, os, subprocess, re, glob
@@ -33,7 +34,8 @@ def submit(**params):
     max_runtime = params.get('max_runtime','24:00:00')
     max_memory = params.get('max_memory','4G')
 
-    xml = '/wynton/home/kortemme/krivacic/sars/interface_analyzer/relax.xml'
+    #xml = '/wynton/home/kortemme/krivacic/sars/interface_analyzer/relax.xml'
+    xml = args['--xml']
 
     python = '/wynton/home/kortemme/krivacic/software/anaconda3/bin/python3'
     #script_path = os.path.expanduser('~/sars/interface_analyzer/run_rosettascripts.py')
