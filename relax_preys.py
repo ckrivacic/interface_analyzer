@@ -90,7 +90,8 @@ if __name__=='__main__':
     xml = args['<xml>']
 
     pdb = pdbs[tasknum//10]
-    outdir = outdir + '/' + pdb + '_origin'
+    pdb_name = os.path.basename(pdb).split('.')[0]
+    outdir = outdir + '/' + pdb_name + '_origin'
     if not os.path.exists(outdir):
         os.mkdir(outdir)
     chain = chain_dict[os.path.basename(pdb)]
