@@ -23,7 +23,7 @@ def read_and_calculate(pdb_path):
     record['path'] = pdb_path
     origin = os.path.basename(pdb_path).split('.')[0].split('_')[:-1]
     origin = '_'.join(origin)
-    print(origin)
+    #print(origin)
     record['origin'] = origin
 
     with open(pdb_path, 'r') as f:
@@ -111,9 +111,29 @@ def plot(records, x='origin', y='dG_separated'):
 
     if x=='origin':
         yvals = []
+        origin_yvals = []
         labels = sorted(list(set(xvals)))
         labels_str = [str(l) for l in labels]
+        ind1 = []
+        ind2 = []
+        i = 0
         for label in labels:
+            ind1.append(i + 1)
+            ind2.append(i + 2)
+            i += 2
+            origin_path = os.path.join('relaxed_outputs', label +
+                    '_origin')
+            origin_record = None
+            print(label)
+            print(origin_path)
+            if os.path.exists(origin_path):
+                origin_record = load_pdbs(origin_path)
+                if not origin_record.empty:
+                    origin_yvals.append(origin_record[y].values)
+                else:
+                    origin_yvals.append([-3])
+            else:
+                origin_yvals.append([-3])
             record = records[records[x] == label]
             yvals.append(record[y].values)
 
@@ -121,15 +141,31 @@ def plot(records, x='origin', y='dG_separated'):
         #widthmodifier = 0.3
         #widthlist = widthmodifier * len(labels) * width/(len(labels))
 
-        vplt = ax.violinplot(yvals,
+        vplt1 = ax.violinplot(yvals,
+                positions=ind1,
                 #positions=[ind for ind in range(len(labels))],
                 showmedians=True)
 
-        for j, v in enumerate(yvals):
-            #print(j, v)
-            pos = max(v)# + 0.05 * abs(max(v))
-            #print(pos)
-            ax.text(j, pos, labels[j])
+        #if not origin_record:
+        vplt2 = ax.violinplot(origin_yvals, 
+                positions=ind2,
+                showmedians=True)
+        facecolor = 'lightcoral'
+        edgecolor='firebrick'
+        for pc in vplt2['bodies']:
+            pc.set_edgecolor(edgecolor)
+            pc.set_facecolor(facecolor)
+        for partname in ('cbars', 'cmins', 'cmaxes', 'cmedians'):
+            vp = vplt2[partname]
+            vp.set_edgecolor(edgecolor)
+
+        suppress_text = False
+        if not suppress_text:
+            for j, v in enumerate(yvals):
+                #print(j, v)
+                pos = max(v)# + 0.05 * abs(max(v))
+                #print(pos)
+                ax.text(2 * j - 1, pos, labels[j].split('_')[0])
 
         ax.set_xlabel('Parent structure')
         ax.set_ylabel(y)

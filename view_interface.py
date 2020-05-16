@@ -3,6 +3,7 @@ Usage: view_interface.py <dataframe> <row> [options]
 
 Options:
     --aligner=STR  Which aligner to look at  [default: align]
+    --path=STR  Use a different pdb path
 '''
 
 import pandas as pd
@@ -10,13 +11,15 @@ import pymol, sys
 import matplotlib.cm
 from pyrosetta import *
 
-def make_pymol_session(df, idx, out='temp.pse', aligner='align'):
+def make_pymol_session(df, idx, out='temp.pse', aligner='align',
+        pdb_path=None):
     """Make a pymol session that colors interface residues by
     motif_score + inter-chain vdw. Patch should be in sticks, interface
     in lines."""
     row = df.iloc[idx]
 
-    pdb_path = row['{}_combined_pdb_path'.format(aligner)]
+    if not pdb_path:
+        pdb_path = row['{}_combined_pdb_path'.format(aligner)]
 
     def parse_pdb_path(path):
         split = path.split('/')[-5:]
@@ -92,6 +95,8 @@ if __name__=='__main__':
 
     args = docopt.docopt(__doc__)
     init()
+    pdb_path = args['--path']
     df = pd.read_pickle(args['<dataframe>'])
-    make_pymol_session(df, int(args['<row>']), aligner=args['--aligner'])
+    make_pymol_session(df, int(args['<row>']),
+            aligner=args['--aligner'], pdb_path=pdb_path)
     os.system('pymol temp.pse')

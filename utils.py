@@ -101,6 +101,25 @@ def reslist_to_selstr(reslist, chain='A'):
     return 'or'.join(selection)
 
 
+def reslist_to_selstr_chain(reslist, chain=None):
+    selection = []
+    for res in reslist:
+        if not chain:
+            splt = res.split(' ')
+            resnum = splt[0]
+            chain = splt[1]
+        else:
+            # Default to chain A if given a list of integers instead of
+            # resnum and chain. Can add an option to specify chain
+            # later.
+            resnum = res.split(' ')[0]
+            chain = chain
+        selstr = ' (resi {} and chain {}) '.format(resnum, chain)
+        selection.append(selstr)
+
+    return 'or'.join(selection)
+
+
 def correct_resnums(initial_pose, reslist, final_pose):
     """Get rosetta numbering for final_pose from a reslist for the
     intial_pose"""
