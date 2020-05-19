@@ -31,8 +31,6 @@ if __name__=="__main__":
 
     df_path = dataframes[tasknum]
     dimerize_pose = args['--dimerize']
-    if dimerize_pose:
-        df_path = df_path[:-4] + '_dimerized.pkl'
     print('OPENING DATAFRAME {}'.format(df_path))
     reference_pdbid = dataframes[tasknum].split('/')[1]
     reference_pdb = os.path.join('virus_pdbs', reference_pdbid.lower() +
@@ -54,6 +52,9 @@ os.environ['HOME'] +
     '''
 
     df = pd.read_pickle(df_path)
+    if dimerize_pose:
+        df_path = df_path[:-4] + '_dimerized.pkl'
+    print(df_path)
     # Determine reference surface residues
     reference_surface = get_reference_definition(reference_pdb,
             return_surface=True)
