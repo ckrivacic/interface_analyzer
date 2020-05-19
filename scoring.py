@@ -58,8 +58,40 @@ def find_pdbs(directory, pattern='*.pdb'):
                 yield filename
 
 
+def dimerize(pose, tarpatch):
+    chainlist = []
+    for resi in tarpatch:
+        chain = resi.split(' ')[1]
+        chainlist.append(chain)
+
+    tarchain = max(set(chainlist), key=chainlist.count)
+    #print(tarchain)
+    posechains = []
+    #print(pose.pdb_info())
+    pose.update_pose_chains_from_pdb_chains()
+    for posechain in pose.split_by_chain():
+        if posechain.pdb_info().pose2pdb(1).split(' ')[1] in [tarchain,
+                'Z']:
+            posechains.append(posechain)
+
+    pose = posechains[0]
+    pose.append_pose_by_jump(posechains[1], pose.size())
+
+    return pose
+
+
+def test_dimerize():
+    init()
+    pose = pose_from_file('outputs/E/O00203/4uqi_align/combined/4uqi_6928_length_4_rmsd_1.92.pdb')
+    #pose = pose_from_file('outputs/E/O00203/2jkr_align/combined/2jkr_5123_length_4_rmsd_0.12.pdb')
+    tarpatch = {'311 A ', '192 M ', '304 A ', '305 A ', '263 A ', '256 A ', '382 A ', '259 A ', '347 A ', '186 M ', '255 A ', '312 A ', '307 A ', '385 A ', '348 A ', '343 A ', '344 A ', '384 A ', '308 A ', '190 M '}
+    #tarpatch = {'361 L ', '324 L ', '299 U ', '323 L ', '399 L ', '437 L ', '363 L ', '325 L '}
+    dimerize(pose, tarpatch)
+
+
+
 def score_pdbs(dataframe, aligner='align', skip=[], out='test_out.pkl',
-        reference_surface=None, fix_paths=True):
+        reference_surface=None, fix_paths=True, dimerize_pose=False):
     """Score all pdbs in a 'patches' dataframe and update the dataframe."""
     sfxn = motif_scorefxn()
     save_check = 0
@@ -75,6 +107,8 @@ def score_pdbs(dataframe, aligner='align', skip=[], out='test_out.pkl',
             print('SKIPPING {}'.format(pdb_path))
             continue
         pose = pose_from_file(pdb_path)
+        if dimerize_pose:
+            pose = dimerize(pose, row['pymol_target_patch'])
         switch = SwitchResidueTypeSetMover("centroid")
         switch.apply(pose)
         save_check += 1
@@ -294,7 +328,8 @@ os.environ['HOME'] + '/rosetta/database/additional_protocol_data/motif_dock/xh_1
     # Determine reference surface residues
     reference_surface = get_reference_definition(reference_pdb,
             return_surface=True)
-    score_pdbs(df, aligner=aligner, skip=skip, reference_surface=reference_surface)
+    score_pdbs(df, aligner=aligner, skip=skip,
+            reference_surface=reference_surface, dimerize_pose=True)
 
     #score_pdbs(df)
     #score_row(df, 6962)

@@ -6,6 +6,7 @@ Usage: cluster_scoring.py [options]
 
 Options:
     --tasknum=[NUMBER]  Just run a specific task (for testing)
+    --dimerize  Just score virus chain + target chain
 """
 from scoring import *
 import glob, docopt, os, sys
@@ -29,6 +30,9 @@ if __name__=="__main__":
         tasknum = int(os.environ['SGE_TASK_ID']) - 1
 
     df_path = dataframes[tasknum]
+    dimerize_pose = args['--dimerize']
+    if dimerize_pose:
+        df_path = df_path[:-4] + '_dimerized.pkl'
     print('OPENING DATAFRAME {}'.format(df_path))
     reference_pdbid = dataframes[tasknum].split('/')[1]
     reference_pdb = os.path.join('virus_pdbs', reference_pdbid.lower() +
