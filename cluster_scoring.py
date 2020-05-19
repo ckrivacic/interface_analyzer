@@ -61,7 +61,9 @@ os.environ['HOME'] +
     print(reference_surface)
     csvpath = df_path[:-4] + '_scored.csv'
     if not os.path.exists(csvpath):
-        score_pdbs(df, aligner=aligner, reference_surface=reference_surface)
+        score_pdbs(df, aligner=aligner,
+                reference_surface=reference_surface,
+                dimerize_pose=dimerize_pose)
     else:
         print('{} already found - skipping scoring'.format(csvpath))
         sys.exit()
