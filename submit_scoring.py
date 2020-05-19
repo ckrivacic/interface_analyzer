@@ -1,7 +1,10 @@
 '''
 Please put path to pdbredo as $PDBREDO in your bashrc
 Usage:
-    submit.py
+    submit.py [options]
+
+Options:
+    --dimerize
 
 '''
 import sys, os, subprocess, re, glob
@@ -42,6 +45,8 @@ def submit(**params):
     qsub_command += '-l', 'mem_free={0}'.format(max_memory),
     qsub_command += python,
     qsub_command += script_path,
+    if args['--dimerize']:
+        qsub_command += '--dimerize',
     print(qsub_command)
 
     status = process.check_output(qsub_command, stderr=subprocess.STDOUT).decode('utf-8')
