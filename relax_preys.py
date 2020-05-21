@@ -49,7 +49,12 @@ chain_dict = {
         '4lhx_cealign_5670_alignscore_n14.pdb': 'D',
         '4lhx_cealign_5671_alignscore_n14.pdb': 'D',
         '5o74_cealign_53863_alignscore_n11.pdb': 'A',
-        '6ekk_cealign_68348_alignscore_n10.pdb': 'C'
+        '6ekk_cealign_68348_alignscore_n10.pdb': 'C',
+        '4lhx_d.clean.pdb': 'D',
+        '5lpn_b.clean.pdb': 'B',
+        '3qbt_h.clean.pdb': 'H',
+        '2ocy_a.clean.pdb': 'A',
+        '4fmb_a.clean.pdb': 'A'
         }
 
 

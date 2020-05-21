@@ -1,21 +1,26 @@
 '''
-Usage: view_interface.py <dataframe> <row> [options]
+Usage: view_interface.py <dataframe> [options]
 
 Options:
     --aligner=STR  Which aligner to look at  [default: align]
     --path=STR  Use a different pdb path
+    --row=INT, -r  Which row to plot
+    --start=INT  When going through dataframe, start at this point
 '''
 
 import pandas as pd
+from scoring import dimerize
 import pymol, sys
 import matplotlib.cm
 from pyrosetta import *
 
-def make_pymol_session(df, idx, out='temp.pse', aligner='align',
+def make_pymol_session(dfpath, idx, out='temp.pse', aligner='align',
         pdb_path=None):
     """Make a pymol session that colors interface residues by
     motif_score + inter-chain vdw. Patch should be in sticks, interface
     in lines."""
+    pymol.cmd.reinitialize()
+    df = pd.read_pickle(dfpath)
     row = df.iloc[idx]
 
     if not pdb_path:
@@ -28,9 +33,14 @@ def make_pymol_session(df, idx, out='temp.pse', aligner='align',
 
     pdb_path = parse_pdb_path(pdb_path)
     #pdb_path = 'outputs/P55789/3r7c_align/combined/3r7c_48_length_13_rmsd_1.95_0001.pdb'
-    pdbinfo = pose_from_file(pdb_path).pdb_info()
+    pose = pose_from_file(pdb_path)
+    if 'dimerized' in dfpath:
+        print('DIMERIZING POSE')
+        pose = dimerize(pose, row['pymol_target_patch'])
+    pdbinfo = pose.pdb_info()
     #pymol.finish_launching(['pymol', '-qc'])
-    pymol.cmd.load(pdb_path, 'combined')
+    basename = os.path.basename(pdb_path)
+    pymol.cmd.load(pdb_path, basename)
     #pymol.util.cbc()
     pymol.util.cbao('chain Z')
 
@@ -70,6 +80,7 @@ def make_pymol_session(df, idx, out='temp.pse', aligner='align',
     pymol.cmd.remove('hydro')
 
     pymol.cmd.save(out)
+    os.system('pymol temp.pse')
 
 
 
@@ -96,7 +107,25 @@ if __name__=='__main__':
     args = docopt.docopt(__doc__)
     init()
     pdb_path = args['--path']
-    df = pd.read_pickle(args['<dataframe>'])
-    make_pymol_session(df, int(args['<row>']),
-            aligner=args['--aligner'], pdb_path=pdb_path)
-    os.system('pymol temp.pse')
+    dfpath = args['<dataframe>']
+    if args['--row']:
+        make_pymol_session(dfpath, int(args['--row']),
+                aligner=args['--aligner'], pdb_path=pdb_path)
+    else:
+        if args['--start']:
+            start = int(args['--start'])
+        else:
+            start = 0
+        df = pd.read_pickle(dfpath)
+        j = 0
+        for idx, row in df.sort_values('pose_score').iterrows():
+            if j < start:
+                j += 1
+                continue
+            print('INDEX IS', idx)
+            print('PDB PATH:',
+                    row['{}_combined_pdb_path'.format(args['--aligner'])])
+            make_pymol_session(dfpath, idx, aligner=args['--aligner'],
+                    pdb_path=pdb_path)
+            j += 1
+    #os.system('pymol temp.pse')
